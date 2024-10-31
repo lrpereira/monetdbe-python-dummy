@@ -82,7 +82,7 @@ typedef struct {
  int querytimeout;
  int sessiontimeout;
  int nr_threads;
-{% if newer_then_dec2023 %}
+{% if newer_than_dec2023 %}
  bool no_int128;
 {% endif %}
  monetdbe_remote* remote;
@@ -136,7 +136,7 @@ extern const void* monetdbe_null(monetdbe_database dbhdl, monetdbe_types t);
 
 extern char* monetdbe_get_columns(monetdbe_database dbhdl, const char* schema_name, const char *table_name, size_t *column_count, monetdbe_column **columns);
 
-{% if newer_then_dec2023 %}
+{% if newer_than_dec2023 %}
 extern char* monetdbe_load_extension(monetdbe_database dbhdl, char *file);
 {% endif %}
 
