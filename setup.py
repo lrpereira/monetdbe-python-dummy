@@ -1,6 +1,5 @@
 from setuptools import find_packages, setup
 from sys import platform
-from setuptools.command.build_ext import build_ext
 import runpy
 import os
 
@@ -58,9 +57,6 @@ setup(
     setup_requires=["cffi>=1.0.0", "Jinja2"],
     extras_require=extras_require,
     cffi_modules=["monetdbe/_cffi/builder.py:ffibuilder"],
-    cmdclass = {'build_ext': build_ext},
     install_requires=["cffi>=1.0.0", "numpy", "pandas"],
-    tests_require=tests_require,
-    test_suite="tests",
     package_data=package_data,
 )
