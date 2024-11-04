@@ -302,9 +302,13 @@ class Cursor:
             if not isinstance(value, (np.ma.core.MaskedArray, np.ndarray)):  # type: ignore
                 prepared[key] = np.array(value)
 
-        if sum(i.dtype.kind not in supported_numpy_types for i in prepared.values()):  # type: ignore
-            warn(
-                "One of the columns you are inserting is not of type int or float which fast append doesn't support. Falling back to regular insert.")
+        unsupported = dict(
+            (key, value.dtype)
+            for key, value in prepared.items() 
+            if value.dtype.kind not in supported_numpy_types
+        )
+        if unsupported:
+            warn(f"Some columns are not supported by fast append, falling back to regular insert: {unsupported}")
             return self._insert_slow(table, prepared, schema)
         return self.connection.append(schema=schema, table=table, data=prepared)
 

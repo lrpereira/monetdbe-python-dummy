@@ -89,7 +89,7 @@ class TestCffi(unittest.TestCase):
                 self.assertEqual(len(warnings), 1)
             with self.assertRaises(con.ProgrammingError):
                 con._internal.append(schema='sys', table='test', data=data)
-            with pytest.warns(UserWarning, match="Falling back to regular insert") as warnings:
+            with pytest.warns(UserWarning, match="falling back to regular insert") as warnings:
                 con.cursor().insert(table='test', values=data)
                 self.assertEqual(len(warnings), 1)
 
