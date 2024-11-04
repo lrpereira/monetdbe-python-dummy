@@ -142,6 +142,7 @@ tests/@test_*_tmp/
 doc/_build
 monetdbe/*.dll
 monetdbe/*.so 
+monetdbe/_lowlevel*
 monetdbe/_cffi/monet_info.py
 this_folder_can_be_removed
 

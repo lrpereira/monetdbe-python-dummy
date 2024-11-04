@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 from sys import platform
-from setuptools.command.build_ext import build_ext as _build_ext
+from setuptools.command.build_ext import build_ext
 import runpy
 import os
 
@@ -8,19 +8,6 @@ import os
 version_file = os.path.join(os.path.dirname(__file__), "monetdbe", "version.py")
 version_data = runpy.run_path(version_file)
 version = version_data['__version__']
-
-
-def get_monetdbe_paths():
-    import os
-    """Obtain the paths for compiling and linking with monetdbe """
-
-    include_dir = os.environ.get("MONETDBE_INCLUDE_PATH")
-    library_dir = os.environ.get("MONETDBE_LIBRARY_PATH")
-
-    return {
-        "include_dir": include_dir,
-        "library_dir": library_dir,
-    }
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
@@ -48,14 +35,6 @@ if platform == 'win32':
     package_data = {"monetdbe": ["*.dll"]}
 else:
     package_data = {}
-
-class build_ext(_build_ext):
-    def finalize_options(self):
-        _build_ext.finalize_options(self)
-        opt = get_monetdbe_paths()
-        if opt['include_dir'] and opt['library_dir']:
-            self.include_dirs.append(opt['include_dir'])
-            self.library_dirs.append(opt['library_dir'])
 
 setup(
     name="monetdbe",

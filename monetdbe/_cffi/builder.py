@@ -18,9 +18,10 @@ from jinja2 import Template
 # It will also be written to branch.py for use at runtime.
 info = {}
 
+monetdbe_include_path = environ.get('MONETDBE_INCLUDE_PATH')
+monetdbe_library_path = environ.get('MONETDBE_LIBRARY_PATH')
 
 # Extract version info from the header files
-monetdbe_include_path = environ.get('MONETDBE_INCLUDE_PATH')
 if not monetdbe_include_path:
     print("\n\n**MONETDB**: MONETDBE_INCLUDE_PATH and MONETDBE_LIBRARY_PATH must be set")
 monetdb_config_h = Path(monetdbe_include_path) / 'monetdb' / 'monetdb_config.h'
@@ -64,9 +65,14 @@ with open(Path(__file__).resolve().parent / "native_utilities.c") as f:
 
 
 # Configure the FFI builder.
-# We do not need to set library_dirs, that gets set from setup.py somehow.
 ffibuilder = FFI()
-ffibuilder.set_source("monetdbe._lowlevel", source=source, libraries=['monetdbe'])
+ffibuilder.set_source(
+    "monetdbe._lowlevel",
+    source=source,
+    libraries=['monetdbe'],
+    library_dirs=[monetdbe_library_path],
+    include_dirs=[monetdbe_include_path],
+)
 ffibuilder.cdef(cdeclarations)
 
 
