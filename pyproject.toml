@@ -2,5 +2,53 @@
 requires = ["setuptools >= 40.6.0", 'cffi', 'jinja2']
 build-backend = "setuptools.build_meta"
 
+[project]
+name = "monetdbe"
+dynamic = ["version"]
+requires-python = ">= 3.8"
+description="MonetDBe - the Python embedded MonetDB"
+authors = [
+    { name = 'Gijs Molenaar', email = 'gijs@pythonic.nl' }
+]
+maintainers = [
+    { name = 'MonetDB Solutions', email = 'info@monetdbsolutions.com' }
+]
+readme = "README.md"
+keywords = ["MonetDB", "MonetDBe", "embedded", "database"]
+classifiers = [
+    "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Database",
+    "Topic :: Database :: Database Engines/Servers",
+    "Topic :: Database :: Front-Ends",
+]
+dependencies = [
+    'cffi >= 1.0.0',
+    'numpy', 'pandas' # currently these are hard dependencies, the module does not load without them
+]
+
+
+[project.urls]
+source = "https://github.com/MonetDBSolutions/MonetDBe-Python"
+documentation = "https://monetdbe.readthedocs.io/"
+
+
+
+
+[project.optional-dependencies]
+doc = ['sphinx', 'sphinx_rtd_theme']
+test = [
+    'pytest',
+    'mypy',
+    'pycodestyle',
+    'data-science-types',
+    'types-setuptools',
+    'types-Jinja2',
+    'typing-extensions',
+    'pymonetdb',
+]
+
+
 [mypy]
 plugins = "numpy.typing.mypy_plugin"

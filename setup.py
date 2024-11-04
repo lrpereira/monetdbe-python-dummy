@@ -8,55 +8,22 @@ version_file = os.path.join(os.path.dirname(__file__), "monetdbe", "version.py")
 version_data = runpy.run_path(version_file)
 version = version_data['__version__']
 
-with open("README.md", "r") as fh:
-    long_description = fh.read()
-
-tests_require = [
-    'pytest',
-    'mypy',
-    'pycodestyle',
-    'data-science-types',
-    'types-setuptools',
-    'types-Jinja2',
-    'typing-extensions',
-    'pymonetdb',
-]
-
-extras_require = {
-    'test': tests_require,
-    'doc': ['sphinx', 'sphinx_rtd_theme'],
-
-}
-
 packages = find_packages(exclude=['tests', 'tests.test_lite'])
 
+
+# is this still needed?
 if platform == 'win32':
     package_data = {"monetdbe": ["*.dll"]}
 else:
     package_data = {}
 
 setup(
-    name="monetdbe",
-    version=version,
-    author="Gijs Molenaar",
-    author_email="gijs@pythonic.nl",
-    description="MonetDBe - the Python embedded MonetDB",
-    long_description=long_description,
-    long_description_content_type="text/markdown",
-    url="https://github.com/monetdBSolutions/MonetDBe-Python/",
-    packages=find_packages(),
-    classifiers=[
-        "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3 :: Only",
-        "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)",
-        "Topic :: Database",
-        "Topic :: Database :: Database Engines/Servers",
-        "Topic :: Database :: Front-Ends",
-    ],
-    python_requires='>=3.7',
-    setup_requires=["cffi>=1.0.0", "Jinja2"],
-    extras_require=extras_require,
+    # dynamic
+    version = version,
+    packages=packages,
+    # invoke cffi
     cffi_modules=["monetdbe/_cffi/builder.py:ffibuilder"],
-    install_requires=["cffi>=1.0.0", "numpy", "pandas"],
-    package_data=package_data,
+    # fine tune included files
+    # package_data=package_data,
+    # exclude_package_data= { "monetdbe._cffi": [ "*.h.j2", "*.c" ]}
 )
