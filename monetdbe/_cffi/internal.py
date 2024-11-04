@@ -12,7 +12,7 @@ from monetdbe._cffi.convert import make_string, monet_c_type_map, extract, numpy
 from monetdbe._cffi.convert.bind import monetdbe_decimal_to_bte, monetdbe_decimal_to_sht, monetdbe_decimal_to_int, monetdbe_decimal_to_lng, prepare_bind
 from monetdbe._cffi.errors import check_error
 from monetdbe._cffi.types_ import monetdbe_result, monetdbe_database, monetdbe_column, monetdbe_statement
-from monetdbe._cffi.branch import newer_than_dec2023
+from monetdbe._cffi.monet_info import INFO
 
 if TYPE_CHECKING:
     from monetdbe.connection import Connection
@@ -181,7 +181,7 @@ class Internal:
         p_options.querytimeout = self.querytimeout
         p_options.sessiontimeout = self.sessiontimeout
         p_options.nr_threads = self.nr_threads
-        if newer_than_dec2023:
+        if INFO.get('have_option_no_int128'):
             p_options.no_int128 = 1
         p_options.mapi_server = ffi.NULL
 
@@ -382,7 +382,7 @@ class Internal:
         lib.monetdbe_cleanup_statement(self._monetdbe_database, statement)
 
     def load_extension(self, name: str):
-        if newer_than_dec2023:
+        if INFO.get('have_load_extension'):
             lib.monetdbe_load_extension(self._monetdbe_database, str(name).encode())
         return None
 

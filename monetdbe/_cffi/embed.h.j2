@@ -82,9 +82,9 @@ typedef struct {
  int querytimeout;
  int sessiontimeout;
  int nr_threads;
-{% if newer_than_dec2023 %}
+{%- if have_option_no_int128 %}
  bool no_int128;
-{% endif %}
+{%- endif %}
  monetdbe_remote* remote;
  monetdbe_mapi_server* mapi_server;
  const char *trace_file;
@@ -136,9 +136,10 @@ extern const void* monetdbe_null(monetdbe_database dbhdl, monetdbe_types t);
 
 extern char* monetdbe_get_columns(monetdbe_database dbhdl, const char* schema_name, const char *table_name, size_t *column_count, monetdbe_column **columns);
 
-{% if newer_than_dec2023 %}
+{%- if have_load_extension %}
+
 extern char* monetdbe_load_extension(monetdbe_database dbhdl, char *file);
-{% endif %}
+{%- endif %}
 
 extern char* monetdbe_dump_database(monetdbe_database dbhdl, const char *backupfile);
 extern char* monetdbe_dump_table(monetdbe_database dbhdl, const char *schema_name, const char *table_name, const char *backupfile);

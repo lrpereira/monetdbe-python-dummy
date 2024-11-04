@@ -3,41 +3,71 @@ This is a build-time utility that will generate the monetdbe._lowlevel
 CFFI bridging shared library.
 """
 from pathlib import Path
-from sys import platform
+import sys
 from os import environ
+import re
 from cffi import FFI
 from jinja2 import Template
 
 
-monetdb_branch = environ.get("MONETDB_BRANCH", "default")
-print(f"\n**MONETDB**: We are assuming you are building against MonetDB branch {monetdb_branch}")
-print("**MONETDB**: If this is incorrect, set the MONETDB_BRANCH environment variable during monetdbe-python build\n")
+# This is where we'll gather knowledge about this MonetDB.
+#
+# For example, version numbers and various flags used by the embed.h.j2 template
+# (see below).
+#
+# It will also be written to branch.py for use at runtime.
+info = {}
 
-branch_file = str(Path(__file__).parent / 'branch.py')
-newer_than_dec2023 = monetdb_branch.lower() not in ("dec2023")
 
+# Extract version info from the header files
+monetdbe_include_path = environ.get('MONETDBE_INCLUDE_PATH')
+if not monetdbe_include_path:
+    print("\n\n**MONETDB**: MONETDBE_INCLUDE_PATH and MONETDBE_LIBRARY_PATH must be set")
+monetdb_config_h = Path(monetdbe_include_path) / 'monetdb' / 'monetdb_config.h'
+with open(monetdb_config_h) as f:
+    config = f.read()
+    for var in ['MONETDB_VERSION', 'MONETDB_RELEASE']:
+        m = re.search(f'#define\\s+{var}\\s+"([^"]*)"', config)
+        if m:
+            info[var.lower()] = m[1]
+
+monetdb_version = tuple(int(i) for i in info['monetdb_version'].split('.'))
+if not 'monetdb_release' in info:
+    info['monetdb_release'] = 'unreleased'
+
+
+# Other info entries
+info['win32'] = sys.platform == 'win32'
+info['have_option_no_int128'] = monetdb_version >= (11, 50, 0)
+info['have_load_extension'] = monetdb_version >= (11, 50, 0)
+
+
+# Make the info available at runtime
+branch_file = str(Path(__file__).parent / 'monet_info.py')
 with open(branch_file, 'w') as f:
-    f.write("# this file is created by the cffi interface builder and contains the monetdb branch env variable.\n\n")
-    f.write(f"monetdb_branch = '{monetdb_branch}'\n")
-    f.write(f"newer_than_dec2023 = {newer_than_dec2023}\n")
+    print("# this file is created by the cffi interface builder.", file=f)
+    print(f"INFO = {info!r}", file=f)
 
 
-win32 = platform == 'win32'
-
-with open(Path(__file__).resolve().parent / "native_utilities.c") as f:
-    source = f.read()
-
-# the ffibuilder object needs to exist and be configured in the module namespace so setup.py can reach it
-ffibuilder = FFI()
-ffibuilder.set_source("monetdbe._lowlevel", source=source, libraries=['monetdbe'])
+# Feed the info into the template to get the declarations we will
+# give to the ffi builder.
 embed_path = str(Path(__file__).resolve().parent / 'embed.h.j2')
-
-
 with open(embed_path, 'r') as f:
     content = f.read()
     template = Template(content)
-    cdef = template.render(win32=win32, newer_than_dec2023=newer_than_dec2023)
-    ffibuilder.cdef(cdef)
+    cdeclarations = template.render(info)
+
+
+# Read our C code
+with open(Path(__file__).resolve().parent / "native_utilities.c") as f:
+    source = f.read()
+
+
+# Configure the FFI builder.
+# We do not need to set library_dirs, that gets set from setup.py somehow.
+ffibuilder = FFI()
+ffibuilder.set_source("monetdbe._lowlevel", source=source, libraries=['monetdbe'])
+ffibuilder.cdef(cdeclarations)
 
 
 def build():
