@@ -2,14 +2,19 @@ import unittest
 
 import monetdbe as monetdbe
 
+from tests.util import get_cached_connection, flush_cached_connection
 
 class TransactionTests(unittest.TestCase):
-    def setUp(self):
-        self.con = monetdbe.connect()
-        self.con.execute("create table test(i int, s text)")
+    def tearDownClass():
+        flush_cached_connection()
 
-    def tearDown(self):
-        self.con.close()
+    def setUpClass():
+        con = get_cached_connection()
+        con.execute("create table test(i int, s text)")
+        con.commit()
+
+    def setUp(self):
+        self.con = get_cached_connection()
 
     def test_vanilla(self):
         """This should just work"""

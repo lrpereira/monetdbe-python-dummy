@@ -8,9 +8,10 @@ import numpy.ma as ma
 from pandas import DataFrame
 from monetdbe import connect, Timestamp
 
+from tests.util import get_cached_connection, flush_cached_connection
 
 def connect_and_execute(values: List[Any], type: str) -> DataFrame:
-    with connect(autocommit=True) as con:
+        con = get_cached_connection(autocommit=True)
         cur = con.execute(f"create table example(d {type})")
         cur.executemany("insert into example(d) values (?)", ((v,) for v in values))
         cur.execute("select * from example")
@@ -18,7 +19,7 @@ def connect_and_execute(values: List[Any], type: str) -> DataFrame:
 
 
 def connect_and_append(values: List[Any], type: str, to_numpy=True) -> DataFrame:
-    with connect(autocommit=True) as con:
+        con = get_cached_connection(autocommit=True)
         cur = con.execute(f"create table example(d {type})")
         input = np.array(values) if to_numpy else values
         con.append(table='example', data={'d': input})
@@ -27,6 +28,9 @@ def connect_and_append(values: List[Any], type: str, to_numpy=True) -> DataFrame
 
 
 class TestDataFrame(TestCase):
+    def tearDownClass():
+        flush_cached_connection()
+
     def test_timestamp(self):
         now = datetime.now().replace(microsecond=0)  # monetdb doesn't support microseconds
         values = [

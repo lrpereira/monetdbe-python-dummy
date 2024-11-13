@@ -6,8 +6,12 @@ from monetdbe._lowlevel import lib
 from monetdbe import connect
 from monetdbe.exceptions import ProgrammingError
 
+from tests.util import get_cached_connection, flush_cached_connection
 
 class TestCffi(unittest.TestCase):
+    def tearDownClass():
+        flush_cached_connection()
+
     def test_cffi(self):
         if platform == 'win32':
             # windows has 128 bit disabled
@@ -16,40 +20,35 @@ class TestCffi(unittest.TestCase):
             self.assertEqual(lib.monetdbe_type_unknown, 14)
 
     def test_append_too_many_columns(self):
-        with connect() as con:
+            con = get_cached_connection()
             con.execute("CREATE TABLE test (i int)")
             data = {'i': np.array([1, 2, 3]), 'j': np.array([1, 2, 3])}
             with self.assertRaises(ProgrammingError):
                 con._internal.append(table='test', data=data)
 
     def test_append_too_little_columns(self):
-        with connect() as con:
+            con = get_cached_connection()
             con.execute("CREATE TABLE test (i int, j int)")
             data = {'i': np.array([1, 2, 3])}
             with self.assertRaises(ProgrammingError):
                 con._internal.append(table='test', data=data)
 
     def test_append_wrong_type(self):
-        """
-        we now convert this automatically, so should not raise error
-        """
-        with connect() as con:
+            #we now convert this automatically, so should not raise error
+            con = get_cached_connection()
             con.execute("CREATE TABLE test (i int)")
             data = {'i': np.array([0.1, 0.2, 0.3], dtype=np.float32)}
             con._internal.append(table='test', data=data)
 
     def test_append_wrong_size(self):
-        """
-        we now convert this automatically, so should not raise error
-        """
-        with connect() as con:
-
+            # we now convert this automatically, so should not raise error
+            con = get_cached_connection()
             con.execute("CREATE TABLE test (i int)")  # SQL int is 32 bit
             data = {'i': np.array([1, 2, 3], dtype=np.int64)}
             con._internal.append(table='test', data=data)
 
     def test_append_supported_types(self):
-        with connect() as con:
+            con = get_cached_connection()
             con.execute("CREATE TABLE test (t tinyint, s smallint, i int, h bigint, r real, f float, b bool)")
             con.execute(
                 """
@@ -64,10 +63,8 @@ class TestCffi(unittest.TestCase):
             con.cursor().insert(table='test', values=data)
 
     def test_append_numpy_only_types(self):
-        """
-        test numpy types don't have have a direct 1-on-1 sql mapping
-        """
-        with connect() as con:
+            #test numpy types don't have have a direct 1-on-1 sql mapping
+            con = get_cached_connection()
             table = 'i'
             con.execute(f"CREATE TABLE {table} (i int)")
             data = {'i': np.ndarray([0], dtype=np.uint32)}
@@ -75,7 +72,7 @@ class TestCffi(unittest.TestCase):
             con.cursor().insert(table=table, values=data)
 
     def test_append_unsupported_types(self):
-        with connect() as con:
+            con = get_cached_connection()
             con.execute("CREATE TABLE test (s string, b blob, d date, t time, ts timestamp)")
             con.execute(
                 """
@@ -94,10 +91,8 @@ class TestCffi(unittest.TestCase):
                 self.assertEqual(len(warnings), 1)
 
     def test_append_blend(self):
-        """
-        numpy.datetime64 is now supported.
-        """
-        with connect() as con:
+            # numpy.datetime64 is now supported.
+            con = get_cached_connection()
             con.execute("CREATE TABLE test (i int, f float, s string, ts timestamp)")
             con.execute(
                 """
@@ -114,7 +109,7 @@ class TestCffi(unittest.TestCase):
             data = con.execute("select * from test").fetchnumpy()
 
     def test_get_columns(self):
-        with connect() as con:
+            con = get_cached_connection()
             con.execute("CREATE TABLE test (i int)")
             con.execute("INSERT INTO test VALUES (1)")
             result = list(con._internal.get_columns(table='test'))

@@ -27,6 +27,7 @@ from shutil import rmtree
 from tempfile import NamedTemporaryFile
 
 import monetdbe
+from tests.util import get_cached_connection, flush_cached_connection
 
 TESTFN = NamedTemporaryFile().name
 
@@ -89,15 +90,18 @@ class ModuleTests(unittest.TestCase):
 
 class ConnectionTests(unittest.TestCase):
 
-    def setUp(self):
-        self.cx = monetdbe.connect(":memory:")
-        cu = self.cx.cursor()
-        # todo/note (Gijs): made ID auto_increment
-        cu.execute("create table test(id integer auto_increment primary key, name text)")
-        cu.execute("insert into test(name) values (?)", ("foo",))
+    def setupClass():
+        cx = get_cached_connection()
+        with cx.cursor() as cu:
+            cu.execute("create table test(id integer auto_increment primary key, name text)")
+            cu.execute("insert into test(name) values (?)", ("foo",))
 
-    def tearDown(self):
-        self.cx.close()
+    def tearDownClass():
+        flush_cached_connection()
+
+    def setUp(self):
+        self.cx = get_cached_connection()
+        # todo/note (Gijs): made ID auto_increment
 
     def test_Commit(self):
         self.cx.commit()
@@ -212,10 +216,9 @@ def prepare_cursor(cx):
     cu.execute("insert into test(name) values (?)", ("foo",))
     return cu
 
-
 class CursorTests(unittest.TestCase):
     def setUp(self):
-        self.cx = monetdbe.connect(":memory:")
+        self.cx = get_cached_connection()
         self.cu = self.cx.cursor()
 
         # todo/note (Gijs): changed income type from number to float and made ID auto_increment
@@ -227,7 +230,10 @@ class CursorTests(unittest.TestCase):
 
     def tearDown(self):
         self.cu.close()
-        self.cx.close()
+        self.cu = None
+
+    def tearDownClass():
+        flush_cached_connection()
 
     def test_ExecuteNoArgs(self):
         self.cu.execute("delete from test")
@@ -427,6 +433,8 @@ class CursorTests(unittest.TestCase):
             lst.append(row[0])
         self.assertEqual(lst[0], 5)
         self.assertEqual(lst[1], 6)
+        #
+        flush_cached_connection()
 
     def test_Fetchone(self):
         self.cu.execute("select name from test")
@@ -735,28 +743,27 @@ class ConstructorTests(unittest.TestCase):
 
 
 class DecimalTests(unittest.TestCase):
-    def setUp(self):
-        self.con = monetdbe.connect(":memory:")
-        self.cur = self.con.cursor()
-        # NOTE: (gijs) replaced binary type with blob
-        self.cur.execute("create table test(x DECIMAL(10,5))")
-
-    def tearDown(self):
-        self.cur.close()
-        self.con.close()
+    def tearDownClass():
+        flush_cached_connection()
 
     def test_decimals(self):
         from decimal import Decimal
         d = Decimal('12345.12345')
-        self.cur.execute("insert into test VALUES (?)", [d])
-        self.cur.execute("select x from test")
-        row = self.cur.fetchone()
-        assert (d == row[0])
+        con = get_cached_connection()
+        with con.cursor() as cur:
+            cur.execute("create table test(x DECIMAL(10,5))")
+            cur.execute("insert into test VALUES (?)", [d])
+            cur.execute("select x from test")
+            row = cur.fetchone()
+            assert (d == row[0])
 
 
 class ExtensionTests(unittest.TestCase):
+    def tearDownClass():
+        flush_cached_connection()
+
     def test_ScriptStringSql(self):
-        with monetdbe.connect(":memory:") as con:
+            con = get_cached_connection()
             cur = con.cursor()
             cur.executescript("""
                 -- bla bla
@@ -769,31 +776,31 @@ class ExtensionTests(unittest.TestCase):
             self.assertEqual(res, 5)
 
     def test_ScriptSyntaxError(self):
-        with monetdbe.connect(":memory:") as con:
+            con = get_cached_connection()
             cur = con.cursor()
             with self.assertRaises(monetdbe.OperationalError):
                 cur.executescript("create table test(x); asdf; create table test2(x)")
 
     def test_ScriptErrorNormal(self):
-        with monetdbe.connect(":memory:") as con:
+            con = get_cached_connection()
             cur = con.cursor()
             with self.assertRaises(monetdbe.OperationalError):
                 cur.executescript("create table test(sadfsadfdsa); select foo from hurz;")
 
     def test_CursorExecutescriptAsBytes(self):
-        with monetdbe.connect(":memory:") as con:
+            con = get_cached_connection()
             cur = con.cursor()
             with self.assertRaises(ValueError) as cm:
                 cur.executescript(b"create table test(foo); insert into test(foo) values (5);")
             self.assertEqual(str(cm.exception), 'script argument must be unicode.')
 
     def test_ConnectionExecute(self):
-        with monetdbe.connect(":memory:") as con:
+            con = get_cached_connection()
             result = con.execute("select 5").fetchone()[0]
             self.assertEqual(result, 5, "Basic test of Connection.execute")
 
     def test_ConnectionExecutemany(self):
-        with monetdbe.connect(":memory:") as con:
+            con = get_cached_connection()
             # NOTE: (gijs) added type int, required for MonetDB
             con.execute("create table test(foo int)")
             con.executemany("insert into test(foo) values (?)", [(3,), (4,)])
@@ -802,7 +809,7 @@ class ExtensionTests(unittest.TestCase):
             self.assertEqual(result[1][0], 4, "Basic test of Connection.executemany")
 
     def test_ConnectionExecutescript(self):
-        with monetdbe.connect(":memory:") as con:
+            con = get_cached_connection()
             # NOTE: (gijs) added type int, required for MonetDB
             con.executescript("create table test(foo int); insert into test(foo) values (5);")
             result = con.execute("select foo from test").fetchone()[0]

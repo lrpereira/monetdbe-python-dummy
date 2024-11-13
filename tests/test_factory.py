@@ -29,6 +29,7 @@ from monetdbe.row import Row
 from monetdbe import connect
 from collections.abc import Sequence
 
+from tests.util import get_cached_connection, flush_cached_connection
 
 class MyConnection(Connection):
     def __init__(self, *args, **kwargs):
@@ -60,11 +61,11 @@ class ConnectionFactoryTests(unittest.TestCase):
 
 
 class CursorFactoryTests(unittest.TestCase):
-    def setUp(self):
-        self.con = connect(":memory:")
+    def tearDownClass():
+        flush_cached_connection()
 
-    def tearDown(self):
-        self.con.close()
+    def setUp(self):
+        self.con = get_cached_connection()
 
     def test_IsInstance(self):
         cur = self.con.cursor()
@@ -102,8 +103,11 @@ class RowFactoryTestsBackwardsCompat(unittest.TestCase):
 
 
 class RowFactoryTests(unittest.TestCase):
+    def tearDownClass():
+        flush_cached_connection()
+
     def setUp(self):
-        self.con = connect(":memory:")
+        self.con = get_cached_connection()
 
     def test_CustomFactory(self):
         self.con.row_factory = lambda cur, row: list(row)
@@ -244,9 +248,6 @@ class RowFactoryTests(unittest.TestCase):
         self.assertRaises(TypeError, self.con.cursor, FakeCursor)
         self.assertRaises(TypeError, Row, FakeCursor(), ())
 
-    def tearDown(self):
-        self.con.close()
-
 
 class TextFactoryTests(unittest.TestCase):
     def setUp(self):
@@ -278,10 +279,17 @@ class TextFactoryTests(unittest.TestCase):
 
 @unittest.skip("We don't support strings with zero byte (yet)")
 class TextFactoryTestsWithEmbeddedZeroBytes(unittest.TestCase):
+    def tearDownClass():
+        flush_cached_connection()
+
+    def setUpClass():
+        con = get_cached_connection()
+        with con.cursor() as cur:
+            cur.execute("create table test (value text)")
+            cur.execute("insert into test (value) values (?)", ("a\x00b",))
+
     def setUp(self):
-        self.con = connect(":memory:")
-        self.con.execute("create table test (value text)")
-        self.con.execute("insert into test (value) values (?)", ("a\x00b",))
+        self.con = get_cached_connection()
 
     def test_String(self):
         # text_factory defaults to str
