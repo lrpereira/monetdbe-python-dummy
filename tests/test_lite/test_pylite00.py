@@ -135,7 +135,8 @@ class TestmonetdbeBase(TestCase):
     def test_null_string_insertion_bug(self):
         with monetdbe.connect() as con:
             cur = con.execute("CREATE TABLE pylite12 (s varchar(2))")
-            cur.insert('pylite12', {'s': np.array(['a', None])})
+            with pytest.warns(UserWarning, match="not supported by fast append") as warnings:
+                cur.insert('pylite12', {'s': np.array(['a', None])})
             result = cur.execute("SELECT * FROM pylite12").fetchnumpy()
             expected = numpy.ma.masked_array(['a', 'a'], mask=[0, 1])
             numpy.testing.assert_array_equal(result['s'], expected)
