@@ -1,0 +1,11 @@
+
+
+
+In test_dbapi.py test_FetchIter I had to add
+flush_cached_connection() otherwise the next
+test would fail with 'inconsistent state'
+
+do not include the .h and .c files in the binary wheel
+
+
+Make numpy and pandas dependencies optional
