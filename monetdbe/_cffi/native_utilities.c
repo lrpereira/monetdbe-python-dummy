@@ -14,7 +14,7 @@ Copyright (c) 2011-2022, Open source contributors.
 Some of the code in this file is derived from Pandas 1.3.5. See PANDAS_LICENSE.txt
 */
 
-#include "monetdb/monetdbe.h"
+#include "monetdbe.h"
 
 void initialize_string_array_from_numpy(char** restrict output, size_t size, char* restrict numpy_string_input, size_t stride_length, bool* restrict mask) {
     if (mask) for   (size_t i = 0; i < size; i++) {

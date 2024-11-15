@@ -24,7 +24,7 @@ monetdbe_library_path = environ.get('MONETDBE_LIBRARY_PATH')
 # Extract version info from the header files
 if not monetdbe_include_path:
     print("\n\n**MONETDB**: MONETDBE_INCLUDE_PATH and MONETDBE_LIBRARY_PATH must be set")
-monetdb_config_h = Path(monetdbe_include_path) / 'monetdb' / 'monetdb_config.h'
+monetdb_config_h = Path(monetdbe_include_path) / 'monetdb_config.h'
 with open(monetdb_config_h) as f:
     config = f.read()
     for var in ['MONETDB_VERSION', 'MONETDB_RELEASE']:
