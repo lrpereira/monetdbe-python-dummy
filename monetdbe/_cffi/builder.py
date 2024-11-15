@@ -8,7 +8,7 @@ from os import environ
 import re
 from cffi import FFI
 from jinja2 import Template
-
+from setuptools.errors import SetupError
 
 # This is where we'll gather knowledge about this MonetDB.
 #
@@ -23,7 +23,10 @@ monetdbe_library_path = environ.get('MONETDBE_LIBRARY_PATH')
 
 # Extract version info from the header files
 if not monetdbe_include_path:
-    print("\n\n**MONETDB**: MONETDBE_INCLUDE_PATH and MONETDBE_LIBRARY_PATH must be set")
+    msg = "MONETDBE_INCLUDE_PATH and MONETDBE_LIBRARY_PATH must be set"
+    # print(f"\n\n**MONETDB**: {msg}\n\n")
+    raise SetupError(msg)
+
 monetdb_config_h = Path(monetdbe_include_path) / 'monetdb_config.h'
 with open(monetdb_config_h) as f:
     config = f.read()
