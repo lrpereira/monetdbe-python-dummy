@@ -26,9 +26,8 @@ class Problem(Exception):
 
 
 def check_venv(require_venv):
-    venv = os.getenv('VIRTUAL_ENV')
-    if venv is not None:
-        print(f'Running in venv {venv!r}')
+    if sys.prefix != sys.base_prefix:
+        print(f'Running in venv:', sys.prefix)
     else:
         if require_venv:
             raise Problem('Expected to run in a venv (Virtual Environment). Activate one or pass --no-require-venv')

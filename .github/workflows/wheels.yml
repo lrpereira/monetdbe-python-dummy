@@ -1,0 +1,63 @@
+name: Build wheels
+on: push
+jobs:
+
+  wheels:
+    strategy:
+      matrix:
+        include:
+          - flavor: ubuntu
+            os: ubuntu-20.04
+          - flavor: mac-intel
+            os: macos-13
+          - flavor: mac-arm
+            os: macos-14
+          - flavor: windows
+            os: windows-19
+    runs-on: ${{ matrix.os }}
+    steps:
+
+      - uses: actions/checkout@v4
+
+      - name: Decide which version of MonetDB to include
+        id: decide_monetdb_version
+        # The script prints 'monetdb_version=XYZ'
+        run: |
+          python3 scripts/monetdb-version-to-embed.py
+          scripts/monetdb-version-to-embed.py >>"$GITHUB_OUTPUT"
+        shell: bash
+
+      - run: echo "Version to embed is ${{ steps.decide_monetdb_version.outputs.monetdb_version }}"
+
+      - name: Install MonetDB
+        id: install_monetdb
+        uses: lrpereira/install-monetdb@main
+        with:
+          version: "${{ steps.decide_monetdb_version.outputs.monetdb_version }}"
+
+      # needed on MacOS where bare pip install no longer works
+      - name: Create and enter a venv
+        run: |
+          python3 -m venv venv
+          python3 -c 'import os; print(os.path.join(os.getcwd(), "venv", "bin"))' >>$GITHUB_PATH
+
+      - name: Check we're in the venv
+        run: python3 -c 'import sys; print(sys.executable)'
+
+      - run: pip install -r ci-requirements.txt
+
+      - name: Build
+        env:
+          MONETDBE_INCLUDE_PATH: ${{ steps.install_monetdb.outputs.includedir }}
+          MONETDBE_LIBRARY_PATH: ${{ steps.install_monetdb.outputs.libdir }}
+        run: |
+          python3 scripts/do-everything.py -d wheelhouse --manylinux=2.35
+          ls -l wheelhouse
+
+      - name: Store results
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.flavor }}-wheels
+          path: wheelhouse
+
+
