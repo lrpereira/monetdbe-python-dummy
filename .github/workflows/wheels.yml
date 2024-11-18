@@ -4,6 +4,7 @@ jobs:
 
   wheels:
     strategy:
+      fail-fast: false
       matrix:
         include:
           - flavor: ubuntu
@@ -13,16 +14,22 @@ jobs:
           - flavor: mac-arm
             os: macos-14
           - flavor: windows
-            os: windows-19
+            os: windows-latest
     runs-on: ${{ matrix.os }}
     steps:
 
       - uses: actions/checkout@v4
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
       - name: Decide which version of MonetDB to include
         id: decide_monetdb_version
         # The script prints 'monetdb_version=XYZ'
         run: |
+          type -P python
+          type -P python3
           python3 scripts/monetdb-version-to-embed.py
           scripts/monetdb-version-to-embed.py >>"$GITHUB_OUTPUT"
         shell: bash
@@ -36,28 +43,33 @@ jobs:
           version: "${{ steps.decide_monetdb_version.outputs.monetdb_version }}"
 
       # needed on MacOS where bare pip install no longer works
-      - name: Create and enter a venv
+      - name: Create a venv
+        id: venv
+        # The python / python3 conditional is needed on windows-2019 runners
         run: |
-          python3 -m venv venv
-          python3 -c 'import os; print(os.path.join(os.getcwd(), "venv", "bin"))' >>$GITHUB_PATH
-
-      - name: Check we're in the venv
-        run: python3 -c 'import sys; print(sys.executable)'
-
-      - run: pip install -r ci-requirements.txt
+          python3 -m venv "$RUNNER_TEMP"/venv
+          echo "activate=$RUNNER_TEMP/venv/${{ runner.os == 'Windows' && 'Scripts' || 'bin' }}/activate" >>"$GITHUB_OUTPUT"
+        shell: bash
 
       - name: Build
         env:
           MONETDBE_INCLUDE_PATH: ${{ steps.install_monetdb.outputs.includedir }}
           MONETDBE_LIBRARY_PATH: ${{ steps.install_monetdb.outputs.libdir }}
         run: |
+          . '${{ steps.venv.outputs.activate }}'
+          echo '== venv activated =='
+          pip install -r ci-requirements.txt
+          echo '== ci-requirements installed =='
           python3 scripts/do-everything.py -d wheelhouse --manylinux=2.35
+          echo '== script completed succesfully =='
           ls -l wheelhouse
+        shell: bash
 
       - name: Store results
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.flavor }}-wheels
           path: wheelhouse
+          retention-days: 3
 
 
