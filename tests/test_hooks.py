@@ -70,8 +70,6 @@ class CollationTests(unittest.TestCase):
         self.assertEqual(result[0][0], 'b')
         self.assertEqual(result[1][0], 'a')
 
-    @unittest.skipIf(monetdbe.monetdbe_version_info < (3, 2, 1),
-                     'old monetdbe versions crash on this test')
     def test_CollationIsUsed(self):
         def mycoll(x, y):
             # reverse order
@@ -276,7 +274,6 @@ class TraceCallbackTests(unittest.TestCase):
                         "Unicode data %s garbled in trace callback: %s"
                         % (ascii(unicode_value), ', '.join(map(ascii, traced_statements))))
 
-    @unittest.skipIf(monetdbe.monetdbe_version_info < (3, 3, 9), "monetdbe_prepare_v2 is not available")
     def test_TraceCallbackContent(self):
         # set_trace_callback() shouldn't produce duplicate content (bpo-26187)
         traced_statements = []

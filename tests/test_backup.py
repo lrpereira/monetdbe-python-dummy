@@ -42,7 +42,6 @@ class BackupTests(unittest.TestCase):
         bck.executemany('INSERT INTO bar (key) VALUES (?)', [(3,), (4,)])
         with self.assertRaises(monetdbe.OperationalError) as cm:
             self.cx.backup(bck)
-        if monetdbe.monetdbe_version_info < (3, 8, 8):
             self.assertEqual(str(cm.exception), 'target is in transaction')
 
     def test_keyword_only_args(self):

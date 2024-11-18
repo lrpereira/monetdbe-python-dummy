@@ -321,15 +321,6 @@ class FunctionTests(unittest.TestCase):
         self.con.create_function("deterministic", 0, mock, deterministic=False)
         self.con.execute("select deterministic() = deterministic()")
         self.assertEqual(mock.call_count, 2)
-
-    @unittest.skipIf(monetdbe.monetdbe_version_info < (3, 8, 3), "deterministic parameter not supported")
-    def test_FuncDeterministic(self):
-        mock = unittest.mock.Mock(return_value=None)
-        self.con.create_function("deterministic", 0, mock, deterministic=True)
-        self.con.execute("select deterministic() = deterministic()")
-        self.assertEqual(mock.call_count, 1)
-
-    @unittest.skipIf(monetdbe.monetdbe_version_info >= (3, 8, 3), "monetdbe < 3.8.3 needed")
     def test_FuncDeterministicNotSupported(self):
         with self.assertRaises(monetdbe.NotSupportedError):
             self.con.create_function("deterministic", 0, int, deterministic=True)
