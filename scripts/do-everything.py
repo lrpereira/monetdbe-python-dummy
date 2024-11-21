@@ -18,6 +18,7 @@ from typing import Optional, Tuple
 # These will be set by check_monetdb
 INC_DIR = None
 LIB_DIR = None
+BIN_DIR = None
 DYN_SUFFIX = None
 
 
@@ -36,13 +37,16 @@ def check_venv(require_venv):
 
 
 def check_monetdb():
-    global INC_DIR, LIB_DIR, DYN_SUFFIX
+    global INC_DIR, LIB_DIR, BIN_DIR, DYN_SUFFIX
     inc_env_var = 'MONETDBE_INCLUDE_PATH'
     lib_env_var = 'MONETDBE_LIBRARY_PATH'
+    bin_env_var = 'MONETDBE_BINARY_PATH'
     inc_dir = os.getenv(inc_env_var, None)
     lib_dir = os.getenv(lib_env_var, None)
+    bin_dir = os.getenv(bin_env_var, None)
     print(f'Found {inc_env_var}={inc_dir!r}')
     print(f'Found {lib_env_var}={lib_dir!r}')
+    print(f'Found {bin_env_var}={bin_dir!r}')
 
     DYN_SUFFIX = (
         'dll' if platform.win32_ver()[0] else
@@ -55,6 +59,8 @@ def check_monetdb():
         raise Problem(f'${inc_env_var} and ${lib_env_var} must be set')
     INC_DIR = Path(inc_dir)
     LIB_DIR = Path(lib_dir)
+    if bin_dir:
+        BIN_DIR = Path(bin_dir)
 
     monetdbe_h_path = INC_DIR / 'monetdbe.h'
     if monetdbe_h_path.is_file():
@@ -62,7 +68,7 @@ def check_monetdb():
     else:
         raise Problem(f'File {monetdbe_h_path} not found')
 
-    lib_name = 'monetdbe.dll' if DYN_SUFFIX == 'dll' else f'libmonetdbe.{DYN_SUFFIX}'
+    lib_name = 'monetdbe.lib' if DYN_SUFFIX == 'dll' else f'libmonetdbe.{DYN_SUFFIX}'
     libmonetdbe_path = LIB_DIR / lib_name
     if libmonetdbe_path.is_file():
         print(f'File {libmonetdbe_path} exists as expected')
@@ -111,21 +117,39 @@ def post_process(destdir: str, manylinux: Optional[Tuple[int, int]]):
         pass
 
     copied = False
-    for x in glob('dist/*.tar.gz'):
-        print(f'Copy {x!r} to {destdir!r}')
-        shutil.copy(x, destdir)
+    for whl in glob('dist/*.tar.gz'):
+        print(f'Copy {whl!r} to {destdir!r}')
+        shutil.copy(whl, destdir)
         copied = True
     if not copied:
         raise Problem(f'No .tar.gz files found in dist/')
 
+    # Where are the shared libraries? Except for Windows they are usually in the
+    # lib dir. On Windows, they are in ..\MonetDB5\bin. However, because
+    # mclient.bat etc are in ..\MonetDB5, BIN_DIR=..\MonetDB5.
+    # So we have to add the \bin suffix here.
+    if DYN_SUFFIX == 'dll':
+        so_dir = BIN_DIR / 'bin'
+    else:
+        so_dir = LIB_DIR
+    so_pattern = str(so_dir / f'*monetdbe.{DYN_SUFFIX}')
+    if not glob(so_pattern):
+        raise Problem(f'Looking for shared libs, no match found for {so_pattern}')
+
+
     copied = False
     with tempfile.TemporaryDirectory()as tmpdir:
         dist_wheel_pattern = str(Path('dist' ) / '*.whl')
-        for x in glob(dist_wheel_pattern):
+        for whl in glob(dist_wheel_pattern):
             # Originally we had separate branches to run auditwheel on Linux,
             # delocate on Mac and whatever on Windows but repairwheel is supposed to
             # be able to handle everything.
-            cmd = [sys.executable, '-m', 'repairwheel', x, '-o', tmpdir, '-l', str(LIB_DIR)]
+            cmd = [
+                sys.executable, '-m', 'repairwheel',
+                whl,
+                '-o', tmpdir,
+                '-l', str(so_dir),
+            ]
             print('------------------------  Making wheel self-contained  -----------------------')
             print(f'Running:', shlex.join(cmd))
             subprocess.check_call(cmd)
@@ -134,15 +158,15 @@ def post_process(destdir: str, manylinux: Optional[Tuple[int, int]]):
         if not copied:
             raise Problem(f'No .whl files found in dist/')
         tmp_wheel_pattern = str(Path(tmpdir) / '*.whl')
-        for x in glob(tmp_wheel_pattern):
-            m = re.search('manylinux_(\d+)_(\d+)', x)
+        for whl in glob(tmp_wheel_pattern):
+            m = re.search('manylinux_(\d+)_(\d+)', whl)
             if m and manylinux:
                 major = int(m[1])
                 minor = int(m[2])
                 if (major, minor) > manylinux:
                     raise Problem(f'Have --manylinux={manylinux[0]}_{manylinux[1]} but found {m[0]}')
-            print(f'Moving {Path(x).name} to {destdir}/')
-            shutil.move(x, destdir)
+            print(f'Moving {Path(whl).name} to {destdir}/')
+            shutil.move(whl, destdir)
 
 
 

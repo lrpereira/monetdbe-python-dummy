@@ -9,10 +9,10 @@ jobs:
         include:
           - flavor: ubuntu
             os: ubuntu-20.04
-          - flavor: mac-intel
-            os: macos-13
-          - flavor: mac-arm
-            os: macos-14
+          # - flavor: mac-intel
+          #   os: macos-13
+          # - flavor: mac-arm
+          #   os: macos-14
           - flavor: windows
             os: windows-latest
     runs-on: ${{ matrix.os }}
@@ -38,7 +38,7 @@ jobs:
 
       - name: Install MonetDB
         id: install_monetdb
-        uses: lrpereira/install-monetdb@main
+        uses: lrpereira/install-monetdb@win2
         with:
           version: "${{ steps.decide_monetdb_version.outputs.monetdb_version }}"
 
@@ -55,6 +55,7 @@ jobs:
         env:
           MONETDBE_INCLUDE_PATH: ${{ steps.install_monetdb.outputs.includedir }}
           MONETDBE_LIBRARY_PATH: ${{ steps.install_monetdb.outputs.libdir }}
+          MONETDBE_BINARY_PATH: ${{ steps.install_monetdb.outputs.bindir }}
         run: |
           . '${{ steps.venv.outputs.activate }}'
           echo '== venv activated =='
