@@ -24,6 +24,16 @@ on:
         type: string
         required: false
         default: ''
+      manylinux-glibc-version:
+        description: Maximum allowed glibc version on manylinux, for example 2.28
+        type: string
+        required: false
+        default: ''
+      cache:
+        description: "Enable caching unless empty. Becomes part of the cache key"
+        type: string
+        required: false
+        default: ''
       artifact-name:
         description: Passed to actions/upload-artifact as the name to upload results to. Leave empty to suppress
         type: string
@@ -34,11 +44,6 @@ on:
         type: number
         required: false
         default: 3
-      manylinux-glibc-version:
-        description: Maximum allowed Glibc version on manylinux, for example 2.28
-        type: string
-        required: false
-        default: ''
     outputs:
       artifact-name:
         description: Artifact name used, copied from input of the same name
@@ -73,11 +78,11 @@ jobs:
       artifact-id: ${{ steps.upload.outputs.artifact-id }}
     steps:
 
+      - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ inputs.python_version }}
-
-      - uses: actions/checkout@v4
 
       - name: Decide which version of MonetDB to include
         id: decide_monetdb_version
@@ -90,13 +95,36 @@ jobs:
           cat "$GITHUB_OUTPUT"
         shell: bash
 
+      - name: Pick hash key
+        id: pickhash
+        if: inputs.cache
+        # The script prints 'hash=XYZ'
+        run: |
+          python3 scripts/pick-cache-hash.py \
+            'py=${{inputs.python_version}}' \
+            'runs-on=${{ inputs.runs-on }}' \
+            'container=${{ inputs.container }}' \
+            'glibc=${{ inputs.manylinux-glibc-version}}' \
+          >>"$GITHUB_OUTPUT"
+          cat "$GITHUB_OUTPUT"
+        shell: bash
+
+      - uses: actions/cache@v4
+        id: cache
+        if: inputs.cache
+        with:
+          path: wheelhouse
+          key: ${{format( '{0}*{1}', inputs.cache, steps.pickhash.outputs.hash )}}
+
       - name: Install MonetDB
+        if: inputs.cache == '' || !steps.cache.outputs.cache-hit
         id: install_monetdb
         uses: lrpereira/install-monetdb@main
         with:
           version: "${{ steps.decide_monetdb_version.outputs.monetdb_version }}"
 
       - name: Build
+        if: inputs.cache == '' || !steps.cache.outputs.cache-hit
         env:
           MONETDBE_INCLUDE_PATH: ${{ steps.install_monetdb.outputs.includedir }}
           MONETDBE_LIBRARY_PATH: ${{ steps.install_monetdb.outputs.libdir }}
