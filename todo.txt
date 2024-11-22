@@ -9,3 +9,15 @@ do not include the .h and .c files in the binary wheel
 
 
 Make numpy and pandas dependencies optional
+
+
+C:\Program Files\MonetDB\MonetDB5\include\monetdb\monetdb_config.h(131): warning C4005: 'HAVE_FTIME': macro redefinition
+C:\hostedtoolcache\windows\Python\3.11.9\x64\include\pyconfig.h(489): note: see previous definition of 'HAVE_FTIME'
+build\temp.win-amd64-cpython-311\Release\monetdbe._lowlevel.c(830): warning C4244: '=': conversion from 'npy_datetime' to 'int32_t', possible loss of data
+build\temp.win-amd64-cpython-311\Release\monetdbe._lowlevel.c(846): warning C4244: '=': conversion from 'npy_datetime' to 'int32_t', possible loss of data
+
+Dat is in pandas_datetime_to_datetimestruct, 830 is out->month, 846 is out->hour
+
+
+
+Introduce proper @v1 etc in install-monetdb
