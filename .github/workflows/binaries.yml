@@ -18,9 +18,10 @@ jobs:
         include:
           - container:
             name:
-          - os: ubuntu-latest
-            container: quay.io/pypa/manylinux_2_28_x86_64
-            name: manylinux
+          #### uncomment this to run in manylinux (doesn't work very well yet)
+          # - os: ubuntu-latest
+          #   container: quay.io/pypa/manylinux_2_28_x86_64
+          #   name: manylinux
     uses: ./.github/workflows/buildwheel.yml
     with:
       python_version: ${{ matrix.python }}
@@ -30,11 +31,25 @@ jobs:
       artifact-name: ${{ matrix.name || matrix.os }}_${{ matrix.python }}
       cache: binaries
 
-#     runs-on: ubuntu-latest
-#     steps:
-#       - run: echo "python=${{ matrix.python }} runner=${{ matrix.os }} container=${{ matrix.container }} name=${{ matrix.name }} "
+  gather:
+    runs-on: ubuntu-latest
+    needs: wheels
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
 
+      - run: |
+          ls -lR artifacts
+          sources=(artifacts/*/*.tar.gz)
+          wheels=(artifacts/*/*.whl)
+          mkdir gathered
+          mv "${sources[1]}" "${wheels[@]}" gathered
 
+      - uses: actions/upload-artifact@v4
+        with:
+          path: gathered
+          name: all-wheels
 
 
 
