@@ -45,6 +45,7 @@ jobs:
           wheels=(artifacts/*/*.whl)
           mkdir gathered
           mv "${sources[1]}" "${wheels[@]}" gathered
+          ls -lR gathered
 
       - uses: actions/upload-artifact@v4
         with:
