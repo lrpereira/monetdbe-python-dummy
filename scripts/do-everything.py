@@ -173,9 +173,8 @@ def post_process(destdir: str, manylinux: Optional[Tuple[int, int]]):
 argparser = argparse.ArgumentParser()
 argparser.add_argument('-d', '--dest-dir', required=True,
                        help='Directory to leave the wheels and source distribution')
-default_manylinux_ver = '2_28'
-argparser.add_argument('--manylinux', default=default_manylinux_ver,
-                       help=f'Version of manylinux to target, default {default_manylinux_ver}')
+argparser.add_argument('--manylinux',
+                       help=f'Version of manylinux to target, for example 2.28')
 argparser.add_argument('--no-require-venv', action='store_true')
 
 
@@ -185,7 +184,7 @@ def main(args):
         major, minor = re.split('[_.]', args.manylinux)
         manylinux = (int(major), int(minor))
     else:
-        manylinux
+        manylinux = None
 
     print('This is do-everything.py')
     print(f'Python is {sys.executable!r} ({sys.version})')
