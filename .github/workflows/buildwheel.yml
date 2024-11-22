@@ -80,21 +80,6 @@ jobs:
 
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ inputs.python_version }}
-
-      - name: Decide which version of MonetDB to include
-        id: decide_monetdb_version
-        # The script prints 'monetdb_version=XYZ'
-        run: |
-          type -P python
-          type -P python3
-          python3 scripts/monetdb-version-to-embed.py
-          scripts/monetdb-version-to-embed.py >>"$GITHUB_OUTPUT"
-          cat "$GITHUB_OUTPUT"
-        shell: bash
-
       - name: Pick hash key
         id: pickhash
         if: inputs.cache
@@ -115,6 +100,21 @@ jobs:
         with:
           path: wheelhouse
           key: ${{format( '{0}*{1}', inputs.cache, steps.pickhash.outputs.hash )}}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python_version }}
+        if: inputs.cache == '' || !steps.cache.outputs.cache-hit
+
+      - name: Decide which version of MonetDB to include
+        if: inputs.cache == '' || !steps.cache.outputs.cache-hit
+        id: decide_monetdb_version
+        # The script prints 'monetdb_version=XYZ'
+        run: |
+          python3 scripts/monetdb-version-to-embed.py
+          scripts/monetdb-version-to-embed.py >>"$GITHUB_OUTPUT"
+          cat "$GITHUB_OUTPUT"
+        shell: bash
 
       - name: Install MonetDB
         if: inputs.cache == '' || !steps.cache.outputs.cache-hit
