@@ -7,14 +7,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - flavor: ubuntu
-            os: ubuntu-20.04
+          # - flavor: ubuntu
+          #   os: ubuntu-20.04
           # - flavor: mac-intel
           #   os: macos-13
           # - flavor: mac-arm
           #   os: macos-14
           - flavor: windows
-            os: windows-latest
+            os: windows-2019
     runs-on: ${{ matrix.os }}
     steps:
 
