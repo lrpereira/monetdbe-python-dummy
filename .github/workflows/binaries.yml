@@ -6,13 +6,33 @@ on:
   push:
 jobs:
 
-  banana:
+  wheels:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-2019
+        python:
+          - 3.11
+        include:
+          - container:
+            name:
+          - os: ubuntu-latest
+            container: quay.io/pypa/manylinux_2_28_x86_64
+            name: manylinux
     uses: ./.github/workflows/buildwheel.yml
     with:
-      python_version: '3.11'
+      python_version: ${{ matrix.python }}
+      runs-on: ${{ matrix.os }}
+      container: ${{ matrix.container }}
       #container: quay.io/pypa/manylinux_2_28_x86_64
-      artifact-name: banana
-      cache: joeri123
+      artifact-name: ${{ matrix.name || matrix.os }}_${{ matrix.python }}
+      cache: binaries
+
+#     runs-on: ubuntu-latest
+#     steps:
+#       - run: echo "python=${{ matrix.python }} runner=${{ matrix.os }} container=${{ matrix.container }} name=${{ matrix.name }} "
 
 
 

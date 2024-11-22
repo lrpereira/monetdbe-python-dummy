@@ -70,7 +70,7 @@ jobs:
       matrix:
         include:
           - runner: ${{ inputs.runs-on || 'ubuntu-latest' }}
-            container_json: ${{ inputs.container && format('{"image":"{0}"}', inputs.container) || 'null' }}
+            container_json: ${{ inputs.container && format('{{"image":"{0}"}}', inputs.container) || 'null' }}
     runs-on: ${{ matrix.runner }}
     container: ${{ fromJSON(matrix.container_json) }}
     outputs:
@@ -132,11 +132,12 @@ jobs:
         run: |
           echo '== enter venv =='
           python3 -m venv "$RUNNER_TEMP"/venv
-          . "$RUNNER_TEMP"/venv/bin/activate
+          . $RUNNER_TEMP/venv/${{ runner.os == 'Windows' && 'Scripts' || 'bin' }}/activate
           echo '== install ci-requirements =='
           pip install -r ci-requirements.txt
+          echo '== run build script =='
           python3 scripts/do-everything.py -d wheelhouse ${{ inputs.manylinux-glibc-version && format('--manylinux="{0}"', inputs.manylinux-glibc-version) || ''}}
-          echo '== script completed succesfully =='
+          echo '== show the results =='
           ls -l wheelhouse
         shell: bash
 
