@@ -255,7 +255,7 @@ void pandas_datetime_to_datetimestruct(npy_datetime dt, NPY_DATETIMEUNIT base, n
 
         case NPY_FR_M:
             out->year  = 1970 + extract_unit(&dt, 12);
-            out->month = dt + 1;
+            out->month = (int)dt + 1;
             break;
 
         case NPY_FR_W:
@@ -271,7 +271,7 @@ void pandas_datetime_to_datetimestruct(npy_datetime dt, NPY_DATETIMEUNIT base, n
             perday = 24LL;
 
             set_datetimestruct_days(extract_unit(&dt, perday), out);
-            out->hour = dt;
+            out->hour = (int)dt;
             break;
 
         case NPY_FR_m:
