@@ -38,7 +38,7 @@ jobs:
 
       - name: Install MonetDB
         id: install_monetdb
-        uses: lrpereira/install-monetdb@win2
+        uses: lrpereira/install-monetdb@main
         with:
           version: "${{ steps.decide_monetdb_version.outputs.monetdb_version }}"
 
