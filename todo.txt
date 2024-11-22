@@ -21,3 +21,5 @@ Dat is in pandas_datetime_to_datetimestruct, 830 is out->month, 846 is out->hour
 
 
 Introduce proper @v1 etc in install-monetdb
+
+Make it possible to build 'default' wheels

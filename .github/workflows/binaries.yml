@@ -1,0 +1,14 @@
+name: Build binary wheels
+# Build wheels for various platforms and Python versions,
+# optionally upload them to pypi
+
+on:
+  push:
+jobs:
+
+  banana:
+    uses: ./.github/workflows/buildwheel.yml
+    with:
+      python_version: 3.11
+      #container: quay.io/pypa/manylinux_2_28_x86_64
+      artifact-name: banana
