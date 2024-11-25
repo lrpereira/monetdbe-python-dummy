@@ -23,3 +23,15 @@ Dat is in pandas_datetime_to_datetimestruct, 830 is out->month, 846 is out->hour
 Introduce proper @v1 etc in install-monetdb
 
 Make it possible to build 'default' wheels
+
+cursor execute returns cursor??
+    Python 3.11.4 (main, Aug 25 2023, 14:04:46) [GCC 12.2.0] on linux
+    Type "help", "copyright", "credits" or "license" for more information.
+    >>> import monetdbe
+    >>> conn = monetdbe.connect()
+    >>> c = conn.cursor()
+    >>> c.execute('select 42')
+    <monetdbe.cursors.Cursor object at 0x7fe6bf63b210>
+    >>> monetdbe
+    <module 'monetdbe' from '/tmp/jvr/xyz/lib/python3.11/site-packages/monetdbe/__init__.py'>
+

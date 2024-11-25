@@ -10,8 +10,8 @@ on:
   # This workflow is intended to be invoked from other workflows
   workflow_call:
     inputs:
-      python_version:
-        description: "Python version to build for, passed to the setup-python action"
+      python-version:
+        description: "Python version to build for. This will be installed with the setup-python action unless set to the empty string"
         type: string
         required: true
       runs-on:
@@ -24,6 +24,11 @@ on:
         type: string
         required: false
         default: ''
+      python-interpreter:
+        description: "Python interpreter to invoke. Defaults to 'python3'"
+        type: string
+        required: false
+        default: python3
       manylinux-glibc-version:
         description: Maximum allowed glibc version on manylinux, for example 2.28
         type: string
@@ -85,11 +90,13 @@ jobs:
         if: inputs.cache
         # The script prints 'hash=XYZ'
         run: |
-          python3 scripts/pick-cache-hash.py \
-            'py=${{inputs.python_version}}' \
+          git config --global --add safe.directory '*'   # needed on manylinux
+          ${{ inputs.python-interpreter }} scripts/pick-cache-hash.py \
+            'python-version=${{inputs.python-version}}' \
             'runs-on=${{ inputs.runs-on }}' \
             'container=${{ inputs.container }}' \
-            'glibc=${{ inputs.manylinux-glibc-version}}' \
+            'python-interpreter=${{inputs.python-interpreter}}' \
+            'manylinux-glibc-version=${{ inputs.manylinux-glibc-version}}' \
           >>"$GITHUB_OUTPUT"
           cat "$GITHUB_OUTPUT"
         shell: bash
@@ -103,15 +110,15 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: ${{ inputs.python_version }}
-        if: inputs.cache == '' || !steps.cache.outputs.cache-hit
+          python-version: ${{ inputs.python-version }}
+        if: (inputs.cache == '' || !steps.cache.outputs.cache-hit) && inputs.python-version
 
       - name: Decide which version of MonetDB to include
         if: inputs.cache == '' || !steps.cache.outputs.cache-hit
         id: decide_monetdb_version
         # The script prints 'monetdb_version=XYZ'
         run: |
-          python3 scripts/monetdb-version-to-embed.py
+          ${{ inputs.python-interpreter }} scripts/monetdb-version-to-embed.py
           scripts/monetdb-version-to-embed.py >>"$GITHUB_OUTPUT"
           cat "$GITHUB_OUTPUT"
         shell: bash
@@ -131,12 +138,12 @@ jobs:
           MONETDBE_BINARY_PATH: ${{ steps.install_monetdb.outputs.bindir }}
         run: |
           echo '== enter venv =='
-          python3 -m venv "$RUNNER_TEMP"/venv
+          ${{ inputs.python-interpreter }} -m venv "$RUNNER_TEMP"/venv
           . $RUNNER_TEMP/venv/${{ runner.os == 'Windows' && 'Scripts' || 'bin' }}/activate
           echo '== install ci-requirements =='
           pip install -r ci-requirements.txt
           echo '== run build script =='
-          python3 scripts/do-everything.py -d wheelhouse ${{ inputs.manylinux-glibc-version && format('--manylinux="{0}"', inputs.manylinux-glibc-version) || ''}}
+          ${{ inputs.python-interpreter }} scripts/do-everything.py -d wheelhouse ${{ inputs.manylinux-glibc-version && format('--manylinux="{0}"', inputs.manylinux-glibc-version) || ''}}
           echo '== show the results =='
           ls -l wheelhouse
         shell: bash

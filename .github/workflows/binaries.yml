@@ -16,19 +16,21 @@ jobs:
         python:
           - 3.11
         include:
+          # Usually set to ''
           - container:
-            name:
-          #### uncomment this to run in manylinux (doesn't work very well yet)
-          # - os: ubuntu-latest
-          #   container: quay.io/pypa/manylinux_2_28_x86_64
-          #   name: manylinux
+            manylinux:
+          # But overridden on Ubuntu
+          - os: ubuntu-latest
+            container: quay.io/pypa/manylinux_2_28_x86_64  # manylinux2014 is too old for actions/checkout to run on
+            manylinux: 2_28
     uses: ./.github/workflows/buildwheel.yml
     with:
-      python_version: ${{ matrix.python }}
+      python-version: ${{ !contains(matrix.container, 'manylinux') && matrix.python || '' }}   # do not run setup-python on manylinux
+      python-interpreter: ${{ matrix.manylinux && format('python{0}', matrix.python) || 'python3' }}
       runs-on: ${{ matrix.os }}
       container: ${{ matrix.container }}
-      #container: quay.io/pypa/manylinux_2_28_x86_64
-      artifact-name: ${{ matrix.name || matrix.os }}_${{ matrix.python }}
+      manylinux-glibc-version: ${{ matrix.manylinux }}
+      artifact-name: ${{ matrix.manylinux && 'manylinux' || matrix.os}}_${{ matrix.python }}
       cache: binaries
 
   gather:
@@ -41,16 +43,15 @@ jobs:
 
       - run: |
           ls -lR artifacts
+          rm -f artifacts/windows*/*.tar.gz
           sources=(artifacts/*/*.tar.gz)
           wheels=(artifacts/*/*.whl)
           mkdir gathered
-          mv "${sources[1]}" "${wheels[@]}" gathered
+          mv "${sources[0]}" "${wheels[@]}" gathered
           ls -lR gathered
 
       - uses: actions/upload-artifact@v4
         with:
           path: gathered
           name: all-wheels
-
-
 
