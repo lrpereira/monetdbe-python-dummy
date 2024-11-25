@@ -143,7 +143,7 @@ jobs:
           echo '== install ci-requirements =='
           pip install -r ci-requirements.txt
           echo '== run build script =='
-          ${{ inputs.python-interpreter }} scripts/do-everything.py -d wheelhouse ${{ inputs.manylinux-glibc-version && format('--manylinux="{0}"', inputs.manylinux-glibc-version) || ''}}
+          python scripts/do-everything.py -d wheelhouse ${{ inputs.manylinux-glibc-version && format('--manylinux="{0}"', inputs.manylinux-glibc-version) || ''}}
           echo '== show the results =='
           ls -l wheelhouse
         shell: bash
