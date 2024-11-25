@@ -160,7 +160,7 @@ def post_process(destdir: str, manylinux: Optional[Tuple[int, int]]):
             raise Problem(f'No .whl files found in dist/')
         tmp_wheel_pattern = str(Path(tmpdir) / '*.whl')
         for whl in glob(tmp_wheel_pattern):
-            m = re.search('manylinux_(\d+)_(\d+)', whl)
+            m = re.search(r'manylinux_(\d+)_(\d+)', whl)
             if m and manylinux:
                 major = int(m[1])
                 minor = int(m[2])
