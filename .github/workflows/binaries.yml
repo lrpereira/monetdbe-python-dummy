@@ -28,6 +28,8 @@ jobs:
           - os: ubuntu-latest
             container: quay.io/pypa/manylinux_2_28_x86_64  # manylinux2014 is too old for actions/checkout to run on
             manylinux: 2_28
+          - os: macos-13
+            python: '3.11'
         exclude:
           # This one complains '[WinError 2] The system cannot find the file specified' at some point
           # while setting up the venv. I don't feel like tracking this down.
@@ -42,6 +44,9 @@ jobs:
       manylinux-glibc-version: ${{ matrix.manylinux }}
       artifact-name: ${{ matrix.manylinux && 'manylinux' || matrix.os}}_${{ matrix.python }}
       cache: binaries
+
+
+
 
   gather:
     runs-on: ubuntu-latest
