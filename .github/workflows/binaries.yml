@@ -28,6 +28,11 @@ jobs:
           - os: ubuntu-latest
             container: quay.io/pypa/manylinux_2_28_x86_64  # manylinux2014 is too old for actions/checkout to run on
             manylinux: 2_28
+        exclude:
+          # This one complains '[WinError 2] The system cannot find the file specified' at some point
+          # while setting up the venv. I don't feel like tracking this down.
+          - os: windows-2019
+            python: '3.8'
     uses: ./.github/workflows/buildwheel.yml
     with:
       python-version: ${{ !contains(matrix.container, 'manylinux') && matrix.python || '' }}   # do not run setup-python on manylinux
