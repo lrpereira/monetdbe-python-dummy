@@ -30,10 +30,11 @@ def check_venv(require_venv):
     if sys.prefix != sys.base_prefix:
         print(f'Running in venv:', sys.prefix)
     else:
-        if require_venv:
-            raise Problem('Expected to run in a venv (Virtual Environment). Activate one or pass --no-require-venv')
-        else:
-            print(f'Not running in a venv! Ignoring because --no-require-venv is set')
+        print(f'Not running in a venv')
+        # if require_venv:
+        #     raise Problem('Expected to run in a venv (Virtual Environment). Activate one or pass --no-require-venv')
+        # else:
+        #     print(f'Not running in a venv! Ignoring because --no-require-venv is set')
 
 
 def check_monetdb():
