@@ -166,6 +166,7 @@ def restart_in_venv():
     print(f'Restarting in venv {venv_dir}')
     print(f'Inner command:', shlex.join(new_cmdline))
     print('=' * 72)
+    sys.stdout.flush()
     return subprocess.call(new_cmdline, env=new_env)
 
 
@@ -188,6 +189,7 @@ def run_module(mod, *args, **envs):
         print(' with\n\t', ',\n\t'.join(f'{k}={shlex.quote(v)}' for k, v in envs.items()), end='')
     print()
     print('-' * 16, 'run', shlex.join(cmdline))
+    sys.stdout.flush()
     try:
         subprocess.check_call(cmdline, env=new_env)
     except subprocess.CalledProcessError as e:
