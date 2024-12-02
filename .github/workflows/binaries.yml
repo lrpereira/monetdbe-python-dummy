@@ -71,6 +71,8 @@ jobs:
   # Use the manylinux container to ensure it works with old glibc versions.
   # Manylinux comes with all relevant Python versions preinstalled.
   linux:
+    if: false
+    continue-on-error: true
     strategy:
       matrix:
         python: ${{ fromJSON(needs.preflight.outputs.pythons) }}
@@ -98,7 +100,7 @@ jobs:
         with:
           path: wheels
           key: cache-42-manylinux${{ matrix.python }}-${{ steps.pickcachehash.outputs.sdist-hash }}-${{ hashFiles('scripts/do-everything.py')}}
-  
+
       - uses: ./actions/install-correct-monetdb-version
         if: (!steps.cache.outputs.cache-hit)
         id: installmonet
@@ -120,4 +122,66 @@ jobs:
           path: wheels/*.whl
 
 
+  macos:
+    needs: preflight
+    continue-on-error: true
+    strategy:
+      matrix:
+        arch: [ "arm", "intel" ]
+        python: [ "3.13", "3.12", "3.11", "3.10", "3.9", "3.8" ]
+        exclude:
+          - python: "3.8"   # not supported by homebrew
+    runs-on: ${{ matrix.arch == 'intel' && 'macos-13' || 'macos-14'}}
+    steps:
 
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: sdist
+          path: sdist
+
+      - id: pickcachehash
+        # prints 'sdist-hash=0F1234'
+        run: |
+          python3 scripts/hash-sdist.py sdist/*.tar.gz >>$GITHUB_OUTPUT
+          cat $GITHUB_OUTPUT
+
+      - uses: actions/cache@v4
+        id: cache
+        with:
+          path: wheels
+          key: cache-magic1-${{ runner.os}}-${{ matrix.arch }}-${{ matrix.python }}-${{ steps.pickcachehash.outputs.sdist-hash }}-${{ hashFiles('scripts/do-everything.py')}}
+
+      # Use Brew to install Python, not setup-python.
+      # Setup-python installs 'universal2' Pythons (x64 and arm64 simultaneously)
+      # and modules for universal2 Pythons cannot link with a non-universal2
+      # libmobetdbe.dylib.
+      - name: Install Python ${{ matrix.python }}
+        if: (!steps.cache.outputs.cache-hit)
+        run: |
+          set -x
+          brew update
+          echo '=========='
+          brew install --overwrite python@${{ matrix.python }}
+          type -p python${{ matrix.python }}
+          file $(brew --prefix)/bin/python${{ matrix.python }}
+
+      - uses: ./actions/install-correct-monetdb-version
+        if: (!steps.cache.outputs.cache-hit)
+        id: installmonet
+
+      - name: Build wheel
+        if: (!steps.cache.outputs.cache-hit)
+        run: |
+          $(brew --prefix)/bin/python${{ matrix.python }} scripts/do-everything.py \
+            -s sdist/*.tar.gz \
+            -d wheels \
+            --wheel \
+            --inc-dir="${{ steps.installmonet.outputs.includedir }}" \
+            --lib-dir="${{ steps.installmonet.outputs.libdir }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-${{ matrix.arch }}-${{ matrix.python }}
+          path: wheels/*.whl
