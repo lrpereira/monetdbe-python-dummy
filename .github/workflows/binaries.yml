@@ -5,15 +5,6 @@ name: Build binary wheels
 on:
   push:
 
-# We're not really using it as an environment variable,
-# we just need a place to state this once
-env:
-  # String encoding of json encoding of list of python versions.
-  # The versions must be strings to avoid 3.10 being interpreted
-  # as the float 3.1.
-  # js
-  python-versions-to-build: '[ "3.11", "3.8" ]'
-
 jobs:
 
   # Run the tests and upload an sdist
@@ -21,6 +12,9 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       sdist-hash: ${{ steps.hash.outputs.sdist-hash }}
+      # This is where you configure which Pythons to build for. Make sure to
+      # quote them, we don't want to round version 3.10 to float 3.1!
+      pythons: '[ "3.11", "3.8" ]'
     steps:
 
       - uses: actions/checkout@v4
@@ -77,6 +71,9 @@ jobs:
   # Use the manylinux container to ensure it works with old glibc versions.
   # Manylinux comes with all relevant Python versions preinstalled.
   linux:
+    strategy:
+      matrix:
+        python: ${{ fromJSON(needs.preflight.outputs.pythons) }}
     needs: preflight
     runs-on: ubuntu-latest
     container:
@@ -97,10 +94,15 @@ jobs:
 
       - name: Build wheel
         run: |
-          python3.12 scripts/do-everything.py \
+          python${{ matrix.python }} scripts/do-everything.py \
             -s sdist/*.tar.gz \
             -d wheels \
             --wheel \
             --manylinux=2.28 \
             --inc-dir="${{ steps.installmonet.outputs.includedir }}" \
             --lib-dir="${{ steps.installmonet.outputs.libdir }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: manylinux-${{ matrix.python }}
+          path: wheels/*.whl
