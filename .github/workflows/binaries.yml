@@ -4,69 +4,61 @@ name: Build binary wheels
 
 on:
   push:
+
 jobs:
 
-  wheels:
-    strategy:
-      fail-fast: false
-      matrix:
-        os:
-          - ubuntu-latest
-          - windows-2019
-        python:
-          - '3.8'
-          - '3.9'
-          - '3.10'
-          - '3.11'
-          - '3.12'
-          - '3.13'
-        include:
-          # Usually set to ''
-          - container:
-            manylinux:
-          # But overridden on Ubuntu
-          - os: ubuntu-latest
-            container: quay.io/pypa/manylinux_2_28_x86_64  # manylinux2014 is too old for actions/checkout to run on
-            manylinux: 2_28
-          - os: macos-13
-            python: '3.11'
-        exclude:
-          # This one complains '[WinError 2] The system cannot find the file specified' at some point
-          # while setting up the venv. I don't feel like tracking this down.
-          - os: windows-2019
-            python: '3.8'
-    uses: ./.github/workflows/buildwheel.yml
-    with:
-      python-version: ${{ !contains(matrix.container, 'manylinux') && matrix.python || '' }}   # do not run setup-python on manylinux
-      python-interpreter: ${{ matrix.manylinux && format('python{0}', matrix.python) || 'python3' }}
-      runs-on: ${{ matrix.os }}
-      container: ${{ matrix.container }}
-      manylinux-glibc-version: ${{ matrix.manylinux }}
-      artifact-name: ${{ matrix.manylinux && 'manylinux' || matrix.os}}_${{ matrix.python }}
-      cache: binaries
-
-
-
-
-  gather:
+  preflight:
     runs-on: ubuntu-latest
-    needs: wheels
+    outputs:
+      sdist-hash: ${{ steps.hash.outputs.sdist-hash }}
     steps:
-      - uses: actions/download-artifact@v4
+
+      - uses: actions/checkout@v4
+
+      - id: pickcachehash
+        # prints 'hash=0FABC...'
+        run: |
+          python3 scripts/hash-source.py >>$GITHUB_OUTPUT
+          cat $GITHUB_OUTPUT
+
+      - uses: actions/cache@v4
+        id: cache
         with:
-          path: artifacts
+          path: dist
+          key: cache-42-${{ steps.pickcachehash.outputs.hash }}
 
-      - run: |
-          ls -lR artifacts
-          rm -f artifacts/windows*/*.tar.gz
-          sources=(artifacts/*/*.tar.gz)
-          wheels=(artifacts/*/*.whl)
-          mkdir gathered
-          mv "${sources[0]}" "${wheels[@]}" gathered
-          ls -lR gathered
+      - id: install
+        if: (!steps.cache.outputs.cache-hit)
+        uses: ./actions/install-correct-monetdb-version
 
-      - uses: actions/upload-artifact@v4
+      - name: Run tests
+        if: (!steps.cache.outputs.cache-hit)
+        env:
+          MONETDBE_INCLUDE_PATH: ${{ steps.install.outputs.includedir }}
+          MONETDBE_LIBRARY_PATH: ${{ steps.install.outputs.libdir }}
+        run: |
+          pip install --upgrade pip
+          echo '========'
+          pip install -e '.[test]'
+          pytest -v
+
+      - name: Build sdist
+        if: (!steps.cache.outputs.cache-hit)
+        env:
+          MONETDBE_INCLUDE_PATH: ${{ steps.install.outputs.includedir }}
+          MONETDBE_LIBRARY_PATH: ${{ steps.install.outputs.libdir }}
+        run: |
+          pip install --upgrade build
+          python3 -m build --sdist
+          ls dist
+
+      - name: Upload sdist
+        uses: actions/upload-artifact@v4
         with:
-          path: gathered
-          name: all-wheels
+          name: sdist
+          path: dist/*.tar.gz
+          retention-days: 3
 
+      - name: Hash sdist
+        id: hash
+        run: python3 scripts/hash-sdist.py dist/*.tar.gz

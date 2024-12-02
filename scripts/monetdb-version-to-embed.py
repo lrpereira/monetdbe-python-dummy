@@ -14,4 +14,4 @@ else:
     version_tuple = version_module['version_tuple']
     version = f'11.{version_tuple[0]}.{version_tuple[1]}'
 
-print(f'monetdb_version={version}')
+print(f'monetdb-version={version}')
