@@ -35,3 +35,10 @@ cursor execute returns cursor??
     >>> monetdbe
     <module 'monetdbe' from '/tmp/jvr/xyz/lib/python3.11/site-packages/monetdbe/__init__.py'>
 
+
+
+if a test fails others fall over as well:
+FAILED tests/test_regression.py::TestMonetDBeRegressions::test_issue_136_bigint_result - ZeroDivisionError: division by zero
+FAILED tests/test_regression.py::TestMonetDBeRegressions::test_multiple_memory_db_issue60 - monetdbe.exceptions.OperationalError: CREATE TABLE: 'test' name conflicts
+FAILED tests/test_regression.py::TestMonetDBeRegressions::test_relative_path - monetdbe.exceptions.OperationalError: Failed to open database: MALException:monetdbe.monetdbe_open:monetdbe_open currently only one active database is supported
+
