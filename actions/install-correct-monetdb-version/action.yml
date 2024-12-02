@@ -1,0 +1,43 @@
+name: Install correct MonetDB version
+description: Look at the version number to decide which MonetDB to install
+outputs:
+  monetdb-version:
+    description: Version number of MonetDB that was installed, for example 11.51.5.
+    value: ${{ steps.decide.outputs.monetdb-version }}
+  prefix:
+    description: directory prefix under which everything has been installed
+    value: ${{ steps.install.outputs.prefix }}
+  bindir:
+    description: directory under $prefix where binaries has been installed
+    value: ${{ steps.install.outputs.bindir }}
+  includedir:
+    description: directory under $prefix where include files has been installed
+    value: ${{ steps.install.outputs.includedir }}
+  libdir:
+    description: directory under $prefix where libraries has been installed
+    value: ${{ steps.install.outputs.libdir }}
+  dynsuffix:
+    description: "the extension used for shared libraries on this platform: so, dylib or dll"
+    value: ${{ steps.install.outputs.dynsuffix }}
+
+
+runs:
+  using: composite
+
+  steps:
+
+  # This script looks at the monetdbe version number and outputs monetdb-version=X.Y.Z
+  - name: Decide which version to install
+    id: decide
+    run: |
+      ${{ runner.os == 'Windows' && 'python' || 'python3' }} scripts/monetdb-version-to-embed.py >>$GITHUB_OUTPUT
+      cat $GITHUB_OUTPUT
+    shell: bash
+
+  # Install that
+  - uses: lrpereira/install-monetdb@main
+    id: install
+    with:
+      version: "${{ steps.decide.outputs.monetdb-version }}"
+
+
