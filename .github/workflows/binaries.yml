@@ -5,8 +5,18 @@ name: Build binary wheels
 on:
   push:
 
+# We're not really using it as an environment variable,
+# we just need a place to state this once
+env:
+  # String encoding of json encoding of list of python versions.
+  # The versions must be strings to avoid 3.10 being interpreted
+  # as the float 3.1.
+  # js
+  python-versions-to-build: '[ "3.11", "3.8" ]'
+
 jobs:
 
+  # Run the tests and upload an sdist
   preflight:
     runs-on: ubuntu-latest
     outputs:
@@ -62,3 +72,35 @@ jobs:
       - name: Hash sdist
         id: hash
         run: python3 scripts/hash-sdist.py dist/*.tar.gz
+
+
+  # Use the manylinux container to ensure it works with old glibc versions.
+  # Manylinux comes with all relevant Python versions preinstalled.
+  linux:
+    needs: preflight
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/pypa/manylinux_2_28_x86_64
+    steps:
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: sdist
+          path: sdist
+
+      - run: ls -lR sdist
+
+      - uses: ./actions/install-correct-monetdb-version
+        id: installmonet
+
+      - name: Build wheel
+        run: |
+          python3.12 scripts/do-everything.py \
+            -s sdist/*.tar.gz \
+            -d wheels \
+            --wheel \
+            --manylinux=2.28 \
+            --inc-dir="${{ steps.installmonet.outputs.includedir }}" \
+            --lib-dir="${{ steps.installmonet.outputs.libdir }}"
