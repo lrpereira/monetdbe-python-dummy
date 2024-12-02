@@ -14,7 +14,7 @@ jobs:
       sdist-hash: ${{ steps.hash.outputs.sdist-hash }}
       # This is where you configure which Pythons to build for. Make sure to
       # quote them, we don't want to round version 3.10 to float 3.1!
-      pythons: '[ "3.11", "3.8" ]'
+      pythons: '[ "3.13", "3.12", "3.11", "3.10", "3.9", "3.8" ]'
     steps:
 
       - uses: actions/checkout@v4
@@ -87,12 +87,24 @@ jobs:
           name: sdist
           path: sdist
 
-      - run: ls -lR sdist
+      - id: pickcachehash
+        # prints 'sdist-hash=0F1234'
+        run: |
+          python3 scripts/hash-sdist.py sdist/*.tar.gz >>$GITHUB_OUTPUT
+          cat $GITHUB_OUTPUT
 
+      - uses: actions/cache@v4
+        id: cache
+        with:
+          path: wheels
+          key: cache-42-manylinux${{ matrix.python }}-${{ steps.pickcachehash.outputs.sdist-hash }}-${{ hashFiles('scripts/do-everything.py')}}
+  
       - uses: ./actions/install-correct-monetdb-version
+        if: (!steps.cache.outputs.cache-hit)
         id: installmonet
 
       - name: Build wheel
+        if: (!steps.cache.outputs.cache-hit)
         run: |
           python${{ matrix.python }} scripts/do-everything.py \
             -s sdist/*.tar.gz \
@@ -106,3 +118,6 @@ jobs:
         with:
           name: manylinux-${{ matrix.python }}
           path: wheels/*.whl
+
+
+
