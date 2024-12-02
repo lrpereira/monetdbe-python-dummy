@@ -255,7 +255,7 @@ def make_standalone(dist_dir, dyn_dir, manylinux, dest_dir):
     # Move it to dest_dir
     d = os.path.join(dest_dir, basename)
     print(f'Moving {fat_wheel} to {d}')
-    os.rename(fat_wheel, d)
+    shutil.move(fat_wheel, d)
 
 
 def validate_manylinux(wheel, allowed):
@@ -342,7 +342,7 @@ def main2(args):
         for s in glob.glob(os.path.join(dist_dir, '*.tar.gz')):
             d = os.path.join(args.dest_dir, os.path.basename(s))
             print(f'Moving {s} to {d}')
-            os.rename(s, d)
+            shutil.move(s, d)
 
     make_standalone(dist_dir, DYN_DIR, args.manylinux, args.dest_dir)
 
