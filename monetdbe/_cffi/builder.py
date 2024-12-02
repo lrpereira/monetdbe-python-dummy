@@ -20,7 +20,8 @@ info = {}
 
 monetdbe_include_path = environ.get('MONETDBE_INCLUDE_PATH')
 monetdbe_library_path = environ.get('MONETDBE_LIBRARY_PATH')
-monetdbe_binary_path = environ.get('MONETDBE_BINARY_PATH')
+# is this still needed on Windows?
+# monetdbe_binary_path = environ.get('MONETDBE_BINARY_PATH')
 
 # Extract version info from the header files
 if not monetdbe_include_path or not monetdbe_library_path:
@@ -76,7 +77,8 @@ ffibuilder.set_source(
     libraries=['monetdbe'],
     library_dirs=[
         monetdbe_library_path,
-        *([monetdbe_binary_path] if monetdbe_binary_path else [])
+        # is this still needed on Windows?
+        # *([monetdbe_binary_path] if monetdbe_binary_path else [])
     ],
     include_dirs=[monetdbe_include_path],
 )
