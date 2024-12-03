@@ -151,7 +151,7 @@ jobs:
         id: cache
         with:
           path: wheels
-          key: cache-magic002-${{ runner.os}}-${{ matrix.arch }}-${{ matrix.python }}-${{ steps.pickcachehash.outputs.sdist-hash }}-${{ hashFiles('scripts/do-everything.py')}}
+          key: cache-magic003-${{ runner.os}}-${{ matrix.arch }}-${{ matrix.python }}-${{ steps.pickcachehash.outputs.sdist-hash }}-${{ hashFiles('scripts/do-everything.py')}}
 
       # Use Brew to install Python, not setup-python.
       # Setup-python installs 'universal2' Pythons (x64 and arm64 simultaneously)
@@ -163,7 +163,9 @@ jobs:
           set -x
           brew update
           echo '=========='
-          brew install --overwrite python@${{ matrix.python }}
+          # Reinstall has no --overwrite flag so if it fails we try to overwrite
+          brew reinstall python@${{ matrix.python }} || \
+            brew link --overwrite python@${{ matrix.python }}
           type -p python${{ matrix.python }}
           file $(brew --prefix)/bin/python${{ matrix.python }}
 
@@ -173,7 +175,6 @@ jobs:
           $(brew --prefix)/bin/python${{ matrix.python }} -m pip debug --verbose
           echo '============'
           python${{ matrix.python }} -m pip debug --verbose
-
 
       - uses: ./actions/install-correct-monetdb-version
         if: (!steps.cache.outputs.cache-hit)
