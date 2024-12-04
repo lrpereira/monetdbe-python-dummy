@@ -128,7 +128,7 @@ jobs:
     strategy:
       matrix:
         arch: [ "arm", "intel" ]
-        python: [ "3.13", "3.12", "3.11", "3.10", "3.9", "3.8" ]
+        python: ${{ fromJSON(needs.preflight.outputs.pythons) }}
         exclude:
           - python: "3.8"   # not supported by homebrew
     runs-on: ${{ matrix.arch == 'intel' && 'macos-13' || 'macos-14'}}
@@ -151,12 +151,21 @@ jobs:
         id: cache
         with:
           path: wheels
-          key: cache-magic003-${{ runner.os}}-${{ matrix.arch }}-${{ matrix.python }}-${{ steps.pickcachehash.outputs.sdist-hash }}-${{ hashFiles('scripts/do-everything.py')}}
+          key: cache-magic004-${{ runner.os}}-${{ matrix.arch }}-${{ matrix.python }}-${{ steps.pickcachehash.outputs.sdist-hash }}-${{ hashFiles('scripts/do-everything.py')}}
 
-      # Use Brew to install Python, not setup-python.
-      # Setup-python installs 'universal2' Pythons (x64 and arm64 simultaneously)
-      # and modules for universal2 Pythons cannot link with a non-universal2
-      # libmobetdbe.dylib.
+      # Install Python from Homebrew.
+      #
+      # The repair / delocate phase of the build step below does not work if the
+      # Python interpreter is a 'universal2' binary (x86 and arm64
+      # simultaneously). The setup-python action always installs a universal2
+      # binary so we cannot use it to build. Homebrew has the policy to always
+      # build single-architecture binaries but nevertheless, some macos runners
+      # come with universal2 Homebrew Python interpreters. For example
+      # python3.12 and 3.13 on macos-13 (Intel).
+      #
+      # Running 'brew reinstall' rather than 'brew install' fixes this but
+      # sometimes fails due to symlinking errors. Running 'brew link
+      # --overwrite' afterward seems to be sufficient.
       - name: Install Python ${{ matrix.python }}
         if: (!steps.cache.outputs.cache-hit)
         run: |
@@ -168,13 +177,6 @@ jobs:
             brew link --overwrite python@${{ matrix.python }}
           type -p python${{ matrix.python }}
           file $(brew --prefix)/bin/python${{ matrix.python }}
-
-      - if: (!steps.cache.outputs.cache-hit)
-        run: |
-          set -x
-          $(brew --prefix)/bin/python${{ matrix.python }} -m pip debug --verbose
-          echo '============'
-          python${{ matrix.python }} -m pip debug --verbose
 
       - uses: ./actions/install-correct-monetdb-version
         if: (!steps.cache.outputs.cache-hit)
@@ -194,3 +196,4 @@ jobs:
         with:
           name: macos-${{ matrix.arch }}-${{ matrix.python }}
           path: wheels/*.whl
+
