@@ -202,10 +202,12 @@ jobs:
     continue-on-error: true
     strategy:
       matrix:
-        python: [ '3.12' ]
-        os: [ 'windows-latest' ]
+        python: ${{ fromJSON(needs.preflight.outputs.pythons) }}
+        include:
+          - python: '3.8'
+            exact-python: '3.8.17'  # this is when unpack_archive's filter= kwarg was introduced
     needs: preflight
-    runs-on: ${{ matrix.os }}
+    runs-on: windows-2019 # also referred to in the cache key below
     steps:
 
       - uses: actions/checkout@v4
@@ -226,12 +228,13 @@ jobs:
         id: cache
         with:
           path: wheels
-          key: cache-magic001-${{ matrix.os }}-${{ matrix.python }}-${{ steps.pickcachehash.outputs.sdist-hash }}-${{ hashFiles('scripts/do-everything.py')}}
+          key: cache-magic001-windows2019-${{ matrix.python }}-${{ steps.pickcachehash.outputs.sdist-hash }}-${{ hashFiles('scripts/do-everything.py')}}
 
       - uses: actions/setup-python@v5
         if: (!steps.cache.outputs.cache-hit)
         with:
-          python-version: ${{ matrix.python }}
+          python-version: ${{ matrix.exact-python || matrix.python }}
+          check-latest: true
 
       - uses: ./actions/install-correct-monetdb-version
         if: (!steps.cache.outputs.cache-hit)
