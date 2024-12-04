@@ -71,8 +71,8 @@ jobs:
   # Use the manylinux container to ensure it works with old glibc versions.
   # Manylinux comes with all relevant Python versions preinstalled.
   linux:
-    if: false
-    continue-on-error: true
+    # if: false
+    # continue-on-error: true
     strategy:
       matrix:
         python: ${{ fromJSON(needs.preflight.outputs.pythons) }}
@@ -123,9 +123,9 @@ jobs:
 
 
   macos:
-    if: false
     needs: preflight
-    continue-on-error: true
+    # if: false
+    # continue-on-error: true
     strategy:
       matrix:
         arch: [ "arm", "intel" ]
@@ -199,14 +199,20 @@ jobs:
           path: wheels/*.whl
 
   windows:
-    continue-on-error: true
+    needs: preflight
+    # if: false
+    # continue-on-error: true
     strategy:
       matrix:
         python: ${{ fromJSON(needs.preflight.outputs.pythons) }}
-        include:
-          - python: '3.8'
-            exact-python: '3.8.17'  # this is when unpack_archive's filter= kwarg was introduced
-    needs: preflight
+        exclude:
+          # The versions we get of Python 3.8, 3.9 and 3.10 are too old.
+          # They don't support the filter= keyword argument to shutil.unpack_archive() yet.
+          # This was introduced in Python 3.8.17, 3.9.17 and 3.10.12.
+          # See https://github.com/actions/setup-python/issues/978.
+          - python: "3.8"
+          - python: "3.9"
+          - python: "3.10"
     runs-on: windows-2019 # also referred to in the cache key below
     steps:
 
@@ -233,7 +239,7 @@ jobs:
       - uses: actions/setup-python@v5
         if: (!steps.cache.outputs.cache-hit)
         with:
-          python-version: ${{ matrix.exact-python || matrix.python }}
+          python-version: ${{ matrix.python }}
           check-latest: true
 
       - uses: ./actions/install-correct-monetdb-version
@@ -257,4 +263,24 @@ jobs:
         with:
           name: windows-${{ matrix.python }}
           path: wheels/*.whl
+
+
+
+  gather:
+    runs-on: ubuntu-latest
+    needs: [ 'linux', 'macos', 'windows' ]
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - run: |
+          mkdir gathered
+          mv -v artifacts/*/*.tar.gz artifacts/*/*.whl gathered/
+          ls -lR gathered
+
+      - uses: actions/upload-artifact@v4
+        with:
+          path: gathered
+          name: all-wheels
 
