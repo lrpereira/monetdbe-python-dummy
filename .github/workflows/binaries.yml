@@ -123,6 +123,7 @@ jobs:
 
 
   macos:
+    if: false
     needs: preflight
     continue-on-error: true
     strategy:
@@ -195,5 +196,62 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: macos-${{ matrix.arch }}-${{ matrix.python }}
+          path: wheels/*.whl
+
+  windows:
+    continue-on-error: true
+    strategy:
+      matrix:
+        python: [ '3.12' ]
+        os: [ 'windows-latest' ]
+    needs: preflight
+    runs-on: ${{ matrix.os }}
+    steps:
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: sdist
+          path: sdist
+
+      - id: pickcachehash
+        # prints 'sdist-hash=0F1234'
+        run: |
+          python3 scripts/hash-sdist.py sdist/*.tar.gz >>$GITHUB_OUTPUT
+          cat $GITHUB_OUTPUT
+        shell: bash
+
+      - uses: actions/cache@v4
+        id: cache
+        with:
+          path: wheels
+          key: cache-magic001-${{ matrix.os }}-${{ matrix.python }}-${{ steps.pickcachehash.outputs.sdist-hash }}-${{ hashFiles('scripts/do-everything.py')}}
+
+      - uses: actions/setup-python@v5
+        if: (!steps.cache.outputs.cache-hit)
+        with:
+          python-version: ${{ matrix.python }}
+
+      - uses: ./actions/install-correct-monetdb-version
+        if: (!steps.cache.outputs.cache-hit)
+        id: installmonet
+
+      - name: Build wheel
+        if: (!steps.cache.outputs.cache-hit)
+        run: |
+          python --version
+          python scripts/do-everything.py \
+            -s sdist/*.tar.gz \
+            -d wheels \
+            --wheel \
+            --manylinux=2.28 \
+            --inc-dir="${{ steps.installmonet.outputs.includedir }}" \
+            --lib-dir="${{ steps.installmonet.outputs.libdir }}"
+        shell: bash
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-${{ matrix.python }}
           path: wheels/*.whl
 
