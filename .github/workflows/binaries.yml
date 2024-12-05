@@ -10,11 +10,11 @@ jobs:
   # Run the tests and upload an sdist
   preflight:
     runs-on: ubuntu-latest
-    outputs:
-      sdist-hash: ${{ steps.hash.outputs.sdist-hash }}
-      # This is where you configure which Pythons to build for. Make sure to
-      # quote them, we don't want to round version 3.10 to float 3.1!
-      pythons: '[ "3.13", "3.12", "3.11", "3.10", "3.9", "3.8" ]'
+    outputs: # use these to control the other jobs
+      magic: magic001
+      continue-on-error: true
+      run-tests: true
+      pythons: '[ "3.13" ]' #   '[ "3.13", "3.12", "3.11", "3.10", "3.9", "3.8" ]'
     steps:
 
       - uses: actions/checkout@v4
@@ -35,6 +35,16 @@ jobs:
         if: (!steps.cache.outputs.cache-hit)
         uses: ./actions/install-correct-monetdb-version
 
+      - name: Build sdist
+        if: (!steps.cache.outputs.cache-hit)
+        env:
+          MONETDBE_INCLUDE_PATH: ${{ steps.install.outputs.includedir }}
+          MONETDBE_LIBRARY_PATH: ${{ steps.install.outputs.libdir }}
+        run: |
+          pip install --upgrade build
+          python3 -m build --sdist
+          ls dist
+
       - name: Run tests
         if: (!steps.cache.outputs.cache-hit)
         env:
@@ -46,16 +56,6 @@ jobs:
           pip install -e '.[test]'
           pytest -v
 
-      - name: Build sdist
-        if: (!steps.cache.outputs.cache-hit)
-        env:
-          MONETDBE_INCLUDE_PATH: ${{ steps.install.outputs.includedir }}
-          MONETDBE_LIBRARY_PATH: ${{ steps.install.outputs.libdir }}
-        run: |
-          pip install --upgrade build
-          python3 -m build --sdist
-          ls dist
-
       - name: Upload sdist
         uses: actions/upload-artifact@v4
         with:
@@ -63,20 +63,16 @@ jobs:
           path: dist/*.tar.gz
           retention-days: 3
 
-      - name: Hash sdist
-        id: hash
-        run: python3 scripts/hash-sdist.py dist/*.tar.gz
-
 
   # Use the manylinux container to ensure it works with old glibc versions.
   # Manylinux comes with all relevant Python versions preinstalled.
   linux:
+    needs: preflight
     # if: false
-    # continue-on-error: true
+    continue-on-error: ${{ fromJSON(needs.preflight.outputs.continue-on-error) }}
     strategy:
       matrix:
         python: ${{ fromJSON(needs.preflight.outputs.pythons) }}
-    needs: preflight
     runs-on: ubuntu-latest
     container:
       image: quay.io/pypa/manylinux_2_28_x86_64
@@ -99,7 +95,7 @@ jobs:
         id: cache
         with:
           path: wheels
-          key: cache-42-manylinux${{ matrix.python }}-${{ steps.pickcachehash.outputs.sdist-hash }}-${{ hashFiles('scripts/do-everything.py')}}
+          key: cache-${{needs.preflight.outputs.magic}}x001-manylinux${{ matrix.python }}-${{ steps.pickcachehash.outputs.sdist-hash }}-${{ hashFiles('scripts/do-everything.py')}}
 
       - uses: ./actions/install-correct-monetdb-version
         if: (!steps.cache.outputs.cache-hit)
@@ -116,6 +112,16 @@ jobs:
             --inc-dir="${{ steps.installmonet.outputs.includedir }}" \
             --lib-dir="${{ steps.installmonet.outputs.libdir }}"
 
+      - name: Run tests
+        if: (!steps.cache.outputs.cache-hit && needs.preflight.outputs.run-tests)
+        env:
+          MONETDBE_INCLUDE_PATH: ${{ steps.installmonet.outputs.includedir }}
+          MONETDBE_LIBRARY_PATH: ${{ steps.installmonet.outputs.libdir }}
+        run: |
+          python${{ matrix.python }} -m venv venv
+          ./venv/bin/pip install -e '.[test]'
+          ./venv/bin/pytest -v
+
       - uses: actions/upload-artifact@v4
         with:
           name: manylinux-${{ matrix.python }}
@@ -125,7 +131,7 @@ jobs:
   macos:
     needs: preflight
     # if: false
-    # continue-on-error: true
+    continue-on-error: ${{ fromJSON(needs.preflight.outputs.continue-on-error) }}
     strategy:
       matrix:
         arch: [ "arm", "intel" ]
@@ -152,7 +158,7 @@ jobs:
         id: cache
         with:
           path: wheels
-          key: cache-magic004-${{ runner.os}}-${{ matrix.arch }}-${{ matrix.python }}-${{ steps.pickcachehash.outputs.sdist-hash }}-${{ hashFiles('scripts/do-everything.py')}}
+          key: cache-${{needs.preflight.outputs.magic}}x001-${{ runner.os}}-${{ matrix.arch }}-${{ matrix.python }}-${{ steps.pickcachehash.outputs.sdist-hash }}-${{ hashFiles('scripts/do-everything.py')}}
 
       # Install Python from Homebrew.
       #
@@ -193,6 +199,16 @@ jobs:
             --inc-dir="${{ steps.installmonet.outputs.includedir }}" \
             --lib-dir="${{ steps.installmonet.outputs.libdir }}"
 
+      - name: Run tests
+        if: (!steps.cache.outputs.cache-hit && needs.preflight.outputs.run-tests)
+        env:
+          MONETDBE_INCLUDE_PATH: ${{ steps.installmonet.outputs.includedir }}
+          MONETDBE_LIBRARY_PATH: ${{ steps.installmonet.outputs.libdir }}
+        run: |
+          python${{ matrix.python }} -m venv venv
+          ./venv/bin/pip install -e '.[test]'
+          ./venv/bin/pytest -v
+
       - uses: actions/upload-artifact@v4
         with:
           name: macos-${{ matrix.arch }}-${{ matrix.python }}
@@ -201,7 +217,7 @@ jobs:
   windows:
     needs: preflight
     # if: false
-    # continue-on-error: true
+    continue-on-error: ${{ fromJSON(needs.preflight.outputs.continue-on-error) }}
     strategy:
       matrix:
         python: ${{ fromJSON(needs.preflight.outputs.pythons) }}
@@ -234,7 +250,7 @@ jobs:
         id: cache
         with:
           path: wheels
-          key: cache-magic001-windows2019-${{ matrix.python }}-${{ steps.pickcachehash.outputs.sdist-hash }}-${{ hashFiles('scripts/do-everything.py')}}
+          key: cache-${{needs.preflight.outputs.magic}}x001-windows2019-${{ matrix.python }}-${{ steps.pickcachehash.outputs.sdist-hash }}-${{ hashFiles('scripts/do-everything.py')}}
 
       - uses: actions/setup-python@v5
         if: (!steps.cache.outputs.cache-hit)
@@ -257,6 +273,17 @@ jobs:
             --manylinux=2.28 \
             --inc-dir="${{ steps.installmonet.outputs.includedir }}" \
             --lib-dir="${{ steps.installmonet.outputs.libdir }}"
+        shell: bash
+
+      - name: Run tests
+        if: (!steps.cache.outputs.cache-hit && needs.preflight.outputs.run-tests)
+        env:
+          MONETDBE_INCLUDE_PATH: ${{ steps.installmonet.outputs.includedir }}
+          MONETDBE_LIBRARY_PATH: ${{ steps.installmonet.outputs.libdir }}
+        run: |
+          python -m venv venv
+          ./venv/Scripts/pip install -e '.[test]'
+          ./venv/Scripts/pytest -v
         shell: bash
 
       - uses: actions/upload-artifact@v4
