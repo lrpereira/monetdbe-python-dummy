@@ -42,3 +42,11 @@ FAILED tests/test_regression.py::TestMonetDBeRegressions::test_issue_136_bigint_
 FAILED tests/test_regression.py::TestMonetDBeRegressions::test_multiple_memory_db_issue60 - monetdbe.exceptions.OperationalError: CREATE TABLE: 'test' name conflicts
 FAILED tests/test_regression.py::TestMonetDBeRegressions::test_relative_path - monetdbe.exceptions.OperationalError: Failed to open database: MALException:monetdbe.monetdbe_open:monetdbe_open currently only one active database is supported
 
+
+
+In binaries.yml, test the generated wheels.
+
+Static analysis:
+- mypy
+- pycodestyle
+
