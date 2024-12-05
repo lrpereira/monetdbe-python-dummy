@@ -35,7 +35,7 @@ runs:
     shell: bash
 
   # Install that
-  - uses: lrpereira/install-monetdb@main
+  - uses: MonetDB/install-monetdb@v0.6
     id: install
     with:
       version: "${{ steps.decide.outputs.monetdb-version }}"
