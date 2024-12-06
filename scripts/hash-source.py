@@ -25,7 +25,6 @@ github_workflows_path = Path('.github', 'workflows')
 
 def is_to_be_hashed(path: Path, content: bytes) -> bool:
     # Exclude the github workflows, they don't affect the result.
-    # Except for the workflow that invokes us
     if path.parent == github_workflows_path:
         return False
     return True

@@ -1,0 +1,78 @@
+name: Linters and static analysis tools
+
+on:
+  push:
+
+jobs:
+
+  checker:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        tool: [ 'pycodestyle', 'mypy' ]
+    steps:
+      - uses: actions/checkout@v4
+
+      # prints 'hash=0FABC...'
+      - run: python3 scripts/hash-source.py | tee $GITHUB_OUTPUT
+        id: sourcehash
+
+      - uses: actions/cache@v4
+        id: cache
+        with:
+          key: checker-magic004-${{matrix.tool}}-${{ steps.sourcehash.outputs.hash}}
+          path: ${{ runner.temp }}/victory-at-last
+
+      - uses: ./actions/install-correct-monetdb-version
+        id: install
+        if: (!steps.cache.outputs.cache-hit)
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.13
+        if: (!steps.cache.outputs.cache-hit)
+
+      - name: Run ${{ matrix.tool }}
+        if: (!steps.cache.outputs.cache-hit)
+        env:
+          MONETDBE_INCLUDE_PATH: ${{ steps.install.outputs.includedir }}
+          MONETDBE_LIBRARY_PATH: ${{ steps.install.outputs.libdir }}
+        run: |
+          python3.13 -m venv '${{ runner.temp }}/venv'
+          . '${{ runner.temp }}/venv/bin/activate'
+          set -x
+          pip install -e '.[test]'
+          ${{ matrix.tool }} .
+          touch '${{ runner.temp }}/victory-at-last'
+
+  doc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # prints 'hash=0FABC...'
+      - run: python3 scripts/hash-source.py | tee $GITHUB_OUTPUT
+        id: sourcehash
+
+      - uses: actions/cache@v4
+        id: cache
+        with:
+          key: checker-magic003-doc-${{ steps.sourcehash.outputs.hash}}
+          path: ${{ runner.temp }}/victory-at-last
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.13
+        if: (!steps.cache.outputs.cache-hit)
+
+      - name: Build docs
+        if: (!steps.cache.outputs.cache-hit)
+        run: |
+          python3.13 -m venv '{{ runner.temp }}/venv'
+          . '{{ runner.temp }}/venv/bin/activate'
+          set -x
+          cd doc
+          pip install -r requirements.txt
+          make html
+          touch '${{ runner.temp }}/victory-at-last'
+
