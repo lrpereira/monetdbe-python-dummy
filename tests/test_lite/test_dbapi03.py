@@ -121,7 +121,6 @@ class TestShutdown:
         with pytest.raises(IndexError):
             monetdbe_cursor.scroll(20)
 
-    @pytest.mark.xfail(reason="We do not implement correctly the iterator protocol for py27")
     def test_cursor_iteration_protocol(self, monetdbe_cursor):
         monetdbe_cursor.execute("SELECT * FROM integers WHERE i IS NOT NULL")
 
@@ -131,11 +130,4 @@ class TestShutdown:
             counter += 1
 
         assert counter == 10
-    # TODO: rewrite this one
-    # def test_use_old_cursor(self, monetdbe_cursor):
-    #     self.connection.close()
 
-    #     self.connection = monetdbe.connect(self.dbfarm)
-    #     if not PY26:
-    #         with self.assertRaises(monetdbe.ProgrammingError):
-    #             monetdbe_cursor.execute('SELECT * FROM integers')
