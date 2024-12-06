@@ -9,7 +9,8 @@ from monetdbe.exceptions import ProgrammingError
 from tests.util import get_cached_connection, flush_cached_connection
 
 class TestCffi(unittest.TestCase):
-    def tearDownClass():
+    @classmethod
+    def tearDownClass(cls):
         flush_cached_connection()
 
     def test_cffi(self):

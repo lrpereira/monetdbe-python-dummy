@@ -5,10 +5,12 @@ import monetdbe as monetdbe
 from tests.util import get_cached_connection, flush_cached_connection
 
 class TransactionTests(unittest.TestCase):
-    def tearDownClass():
+    @classmethod
+    def tearDownClass(cls):
         flush_cached_connection()
 
-    def setUpClass():
+    @classmethod
+    def setUpClass(cls):
         con = get_cached_connection()
         con.execute("create table test(i int, s text)")
         con.commit()

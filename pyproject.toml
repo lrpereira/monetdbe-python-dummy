@@ -50,5 +50,8 @@ test = [
 ]
 
 
-[mypy]
-plugins = "numpy.typing.mypy_plugin"
+[tool.mypy]
+
+[[tool.mypy.overrides]]
+module = 'monetdbe._lowlevel'
+ignore_missing_imports = true
