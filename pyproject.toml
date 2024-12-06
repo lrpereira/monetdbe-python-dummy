@@ -45,6 +45,7 @@ test = [
     'data-science-types',
     'types-setuptools',
     'types-Jinja2',
+    'types-cffi',
     'typing-extensions',
     'pymonetdb',
 ]

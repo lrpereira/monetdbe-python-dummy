@@ -22,7 +22,7 @@ def connect_and_execute(values: List[Any], type: str) -> DataFrame:
 def connect_and_append(values: List[Any], type: str) -> DataFrame:
     con = get_cached_connection(autocommit=True)
     cur = con.execute(f"create table example(d {type})")
-    input = values if isinstance(values, (np.array.__class__, ma.masked_array)) else np.array(values)
+    input = values if isinstance(values, (np.array.__class__, ma.MaskedArray)) else np.array(values)
     con.append(table='example', data={'d': input})
     cur.execute("select * from example")
     return cur.fetchdf()
