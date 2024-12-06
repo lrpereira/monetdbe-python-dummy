@@ -19,7 +19,7 @@ else:
 
 setup(
     # dynamic
-    version = version,
+    version=version,
     packages=packages,
     # invoke cffi
     cffi_modules=["monetdbe/_cffi/builder.py:ffibuilder"],

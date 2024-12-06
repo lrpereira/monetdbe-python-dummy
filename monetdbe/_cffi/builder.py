@@ -38,7 +38,7 @@ with open(monetdb_config_h) as f:
             info[var.lower()] = m[1]
 
 monetdb_version = tuple(int(i) for i in info['monetdb_version'].split('.'))
-if not 'monetdb_release' in info:
+if 'monetdb_release' not in info:
     info['monetdb_release'] = 'unreleased'
 
 

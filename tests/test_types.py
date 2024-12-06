@@ -66,7 +66,7 @@ class monetdbeTypeTests(unittest.TestCase):
         row = self.cur.fetchone()
         self.assertEqual(row[0], val)
 
-    @pytest.mark.xfail(condition= sys.platform == 'darwin', reason='Known failure on MacOS, fix this!', strict=True)
+    @pytest.mark.xfail(condition=(sys.platform == 'darwin'), reason='Known failure on MacOS, fix this!', strict=True)
     def test_Blob(self):
         sample = b"Guglhupf"
         val = memoryview(sample)

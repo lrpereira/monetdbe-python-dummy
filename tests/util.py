@@ -4,13 +4,18 @@ import monetdbe
 CACHED_ARGS = ''
 CACHED_CONNECTION: Optional[monetdbe.Connection] = None
 
+
 def is_alive():
+    # noqa
     global CACHED_CONNECTION
-    return (
-        CACHED_CONNECTION is not None
-        and hasattr(CACHED_CONNECTION, '_internal')
-        and CACHED_CONNECTION._internal is not None
-    )
+    if CACHED_CONNECTION is None:
+        return False
+    if not hasattr(CACHED_CONNECTION, '_internal'):
+        return False
+    if CACHED_CONNECTION._internal is None:
+        return False
+    return True
+
 
 def flush_cached_connection():
     global CACHED_CONNECTION

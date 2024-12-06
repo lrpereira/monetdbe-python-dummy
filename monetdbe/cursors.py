@@ -304,7 +304,7 @@ class Cursor:
 
         unsupported = dict(
             (key, value.dtype)
-            for key, value in prepared.items() 
+            for key, value in prepared.items()
             if value.dtype.kind not in supported_numpy_types
         )
         if unsupported:

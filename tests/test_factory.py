@@ -31,6 +31,7 @@ from collections.abc import Sequence
 
 from tests.util import get_cached_connection, flush_cached_connection
 
+
 class MyConnection(Connection):
     def __init__(self, *args, **kwargs):
         Connection.__init__(self, *args, **kwargs)

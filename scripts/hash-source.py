@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 
 from pathlib import Path
-import subprocess, sys
+import subprocess
+import sys
 
 import hashlib
 
 hasher = hashlib.sha512()
+
 
 def add(text):
     assert isinstance(text, str)
@@ -19,6 +21,8 @@ for arg in sys.argv[1:]:
 ls_files = subprocess.check_output(['git', 'ls-files'], encoding='ascii').splitlines()
 
 github_workflows_path = Path('.github', 'workflows')
+
+
 def is_to_be_hashed(path: Path, content: bytes) -> bool:
     # Exclude the github workflows, they don't affect the result.
     # Except for the workflow that invokes us

@@ -10,21 +10,22 @@ from monetdbe import connect, Timestamp
 
 from tests.util import get_cached_connection, flush_cached_connection
 
+
 def connect_and_execute(values: List[Any], type: str) -> DataFrame:
-        con = get_cached_connection(autocommit=True)
-        cur = con.execute(f"create table example(d {type})")
-        cur.executemany("insert into example(d) values (?)", ((v,) for v in values))
-        cur.execute("select * from example")
-        return cur.fetchdf()
+    con = get_cached_connection(autocommit=True)
+    cur = con.execute(f"create table example(d {type})")
+    cur.executemany("insert into example(d) values (?)", ((v,) for v in values))
+    cur.execute("select * from example")
+    return cur.fetchdf()
 
 
 def connect_and_append(values: List[Any], type: str) -> DataFrame:
-        con = get_cached_connection(autocommit=True)
-        cur = con.execute(f"create table example(d {type})")
-        input = values if isinstance(values, (np.array.__class__, ma.masked_array)) else np.array(values)
-        con.append(table='example', data={'d': input})
-        cur.execute("select * from example")
-        return cur.fetchdf()
+    con = get_cached_connection(autocommit=True)
+    cur = con.execute(f"create table example(d {type})")
+    input = values if isinstance(values, (np.array.__class__, ma.masked_array)) else np.array(values)
+    con.append(table='example', data={'d': input})
+    cur.execute("select * from example")
+    return cur.fetchdf()
 
 
 class TestDataFrame(TestCase):
