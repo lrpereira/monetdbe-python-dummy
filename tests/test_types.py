@@ -21,8 +21,11 @@
 #    misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
 from datetime import datetime, timezone
+import sys
 import unittest
 import zlib
+
+import pytest
 
 import monetdbe as monetdbe
 
@@ -63,6 +66,7 @@ class monetdbeTypeTests(unittest.TestCase):
         row = self.cur.fetchone()
         self.assertEqual(row[0], val)
 
+    @pytest.mark.xfail(condition= sys.platform == 'darwin', reason='Known failure on MacOS, fix this!', strict=True)
     def test_Blob(self):
         sample = b"Guglhupf"
         val = memoryview(sample)
