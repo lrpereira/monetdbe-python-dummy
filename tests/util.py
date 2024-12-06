@@ -1,7 +1,8 @@
+from typing import Optional
 import monetdbe
 
 CACHED_ARGS = ''
-CACHED_CONNECTION: monetdbe.Connection = None
+CACHED_CONNECTION: Optional[monetdbe.Connection] = None
 
 def is_alive():
     global CACHED_CONNECTION
@@ -29,6 +30,7 @@ def get_cached_connection(*args, **kwargs) -> monetdbe.Connection:
         flush_cached_connection()
 
     if is_alive():
+        assert CACHED_CONNECTION
         CACHED_CONNECTION.rollback()
     else:
         # with open('/dev/tty', 'w') as f:

@@ -18,17 +18,18 @@ def connect_and_execute(values: List[Any], type: str) -> DataFrame:
         return cur.fetchdf()
 
 
-def connect_and_append(values: List[Any], type: str, to_numpy=True) -> DataFrame:
+def connect_and_append(values: List[Any], type: str) -> DataFrame:
         con = get_cached_connection(autocommit=True)
         cur = con.execute(f"create table example(d {type})")
-        input = np.array(values) if to_numpy else values
+        input = values if isinstance(values, (np.array.__class__, ma.masked_array)) else np.array(values)
         con.append(table='example', data={'d': input})
         cur.execute("select * from example")
         return cur.fetchdf()
 
 
 class TestDataFrame(TestCase):
-    def tearDownClass():
+    @classmethod
+    def tearDownClass(cls):
         flush_cached_connection()
 
     def test_timestamp(self):
@@ -81,7 +82,7 @@ class TestDataFrame(TestCase):
         values = np.array(['asssssssssssssssss', 'iwwwwwwwwwwwwwww', None], dtype=np.str_)
 
         masked = ma.masked_array(values, mask=[0, 0, 1])
-        df = connect_and_append(masked, 'string', False)
+        df = connect_and_append(masked, 'string')
         self.assertEqual(masked.tolist(), list(df['d'].replace({np.nan: None})))
 
     def test_varchar(self):

@@ -90,13 +90,15 @@ class ModuleTests(unittest.TestCase):
 
 class ConnectionTests(unittest.TestCase):
 
-    def setupClass():
+    @classmethod
+    def setupClass(cls):
         cx = get_cached_connection()
         with cx.cursor() as cu:
             cu.execute("create table test(id integer auto_increment primary key, name text)")
             cu.execute("insert into test(name) values (?)", ("foo",))
 
-    def tearDownClass():
+    @classmethod
+    def tearDownClass(cls):
         flush_cached_connection()
 
     def setUp(self):
@@ -232,7 +234,8 @@ class CursorTests(unittest.TestCase):
         self.cu.close()
         self.cu = None
 
-    def tearDownClass():
+    @classmethod
+    def tearDownClass(cls):
         flush_cached_connection()
 
     def test_ExecuteNoArgs(self):
@@ -743,7 +746,8 @@ class ConstructorTests(unittest.TestCase):
 
 
 class DecimalTests(unittest.TestCase):
-    def tearDownClass():
+    @classmethod
+    def tearDownClass(cls):
         flush_cached_connection()
 
     def test_decimals(self):
@@ -759,7 +763,8 @@ class DecimalTests(unittest.TestCase):
 
 
 class ExtensionTests(unittest.TestCase):
-    def tearDownClass():
+    @classmethod
+    def tearDownClass(cls):
         flush_cached_connection()
 
     def test_ScriptStringSql(self):

@@ -61,7 +61,8 @@ class ConnectionFactoryTests(unittest.TestCase):
 
 
 class CursorFactoryTests(unittest.TestCase):
-    def tearDownClass():
+    @classmethod
+    def tearDownClass(cls):
         flush_cached_connection()
 
     def setUp(self):
@@ -103,7 +104,8 @@ class RowFactoryTestsBackwardsCompat(unittest.TestCase):
 
 
 class RowFactoryTests(unittest.TestCase):
-    def tearDownClass():
+    @classmethod
+    def tearDownClass(cls):
         flush_cached_connection()
 
     def setUp(self):
@@ -279,10 +281,12 @@ class TextFactoryTests(unittest.TestCase):
 
 @unittest.skip("We don't support strings with zero byte (yet)")
 class TextFactoryTestsWithEmbeddedZeroBytes(unittest.TestCase):
-    def tearDownClass():
+    @classmethod
+    def tearDownClass(cls):
         flush_cached_connection()
 
-    def setUpClass():
+    @classmethod
+    def setUpClass(cls):
         con = get_cached_connection()
         with con.cursor() as cur:
             cur.execute("create table test (value text)")
