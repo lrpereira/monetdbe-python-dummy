@@ -11,7 +11,7 @@ jobs:
   preflight:
     runs-on: ubuntu-latest
     outputs: # use these to control the other jobs
-      magic: magic001
+      magic: magic002
       continue-on-error: true
       run-tests: true
       pythons: '[ "3.13" ]' #   '[ "3.13", "3.12", "3.11", "3.10", "3.9", "3.8" ]'
@@ -112,15 +112,17 @@ jobs:
             --inc-dir="${{ steps.installmonet.outputs.includedir }}" \
             --lib-dir="${{ steps.installmonet.outputs.libdir }}"
 
-      - name: Run tests
+      - name: Test the wheel
         if: (!steps.cache.outputs.cache-hit && needs.preflight.outputs.run-tests)
-        env:
-          MONETDBE_INCLUDE_PATH: ${{ steps.installmonet.outputs.includedir }}
-          MONETDBE_LIBRARY_PATH: ${{ steps.installmonet.outputs.libdir }}
         run: |
+          set -x
+          mkdir testtesttest
+          cd testtesttest
           python${{ matrix.python }} -m venv venv
-          ./venv/bin/pip install -e '.[test]'
-          ./venv/bin/pytest -v
+          WHEEL="$(echo ../wheels/*.whl)"
+          ./venv/bin/pip install "${WHEEL}[test]"
+          cp -r ../tests .
+          ./venv/bin/pytest -v tests
 
       - uses: actions/upload-artifact@v4
         with:
@@ -199,15 +201,17 @@ jobs:
             --inc-dir="${{ steps.installmonet.outputs.includedir }}" \
             --lib-dir="${{ steps.installmonet.outputs.libdir }}"
 
-      - name: Run tests
+      - name: Test the wheel
         if: (!steps.cache.outputs.cache-hit && needs.preflight.outputs.run-tests)
-        env:
-          MONETDBE_INCLUDE_PATH: ${{ steps.installmonet.outputs.includedir }}
-          MONETDBE_LIBRARY_PATH: ${{ steps.installmonet.outputs.libdir }}
         run: |
+          set -x
+          mkdir testtesttest
+          cd testtesttest
           python${{ matrix.python }} -m venv venv
-          ./venv/bin/pip install -e '.[test]'
-          ./venv/bin/pytest -v
+          WHEEL="$(echo ../wheels/*.whl)"
+          ./venv/bin/pip install "${WHEEL}[test]"
+          cp -r ../tests .
+          ./venv/bin/pytest -v tests
 
       - uses: actions/upload-artifact@v4
         with:
@@ -275,15 +279,17 @@ jobs:
             --lib-dir="${{ steps.installmonet.outputs.libdir }}"
         shell: bash
 
-      - name: Run tests
+      - name: Test the wheel
         if: (!steps.cache.outputs.cache-hit && needs.preflight.outputs.run-tests)
-        env:
-          MONETDBE_INCLUDE_PATH: ${{ steps.installmonet.outputs.includedir }}
-          MONETDBE_LIBRARY_PATH: ${{ steps.installmonet.outputs.libdir }}
         run: |
+          set -x
+          mkdir testtesttest
+          cd testtesttest
           python -m venv venv
-          ./venv/Scripts/pip install -e '.[test]'
-          ./venv/Scripts/pytest -v
+          WHEEL="$(echo ../wheels/*.whl)"
+          ./venv/Scripts/pip install "${WHEEL}[test]"
+          cp -r ../tests .
+          ./venv/Scripts/pytest -v tests
         shell: bash
 
       - uses: actions/upload-artifact@v4
