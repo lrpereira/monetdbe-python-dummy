@@ -218,6 +218,7 @@ def prepare_cursor(cx):
     cu.execute("insert into test(name) values (?)", ("foo",))
     return cu
 
+
 class CursorTests(unittest.TestCase):
     def setUp(self):
         self.cx = get_cached_connection()
@@ -768,57 +769,57 @@ class ExtensionTests(unittest.TestCase):
         flush_cached_connection()
 
     def test_ScriptStringSql(self):
-            con = get_cached_connection()
-            cur = con.cursor()
-            cur.executescript("""
-                -- bla bla
-                /* a stupid comment */
-                create table a(i int);
-                insert into a(i) values (5);
-                """)
-            cur.execute("select i from a")
-            res = cur.fetchone()[0]
-            self.assertEqual(res, 5)
+        con = get_cached_connection()
+        cur = con.cursor()
+        cur.executescript("""
+            -- bla bla
+            /* a stupid comment */
+            create table a(i int);
+            insert into a(i) values (5);
+            """)
+        cur.execute("select i from a")
+        res = cur.fetchone()[0]
+        self.assertEqual(res, 5)
 
     def test_ScriptSyntaxError(self):
-            con = get_cached_connection()
-            cur = con.cursor()
-            with self.assertRaises(monetdbe.OperationalError):
-                cur.executescript("create table test(x); asdf; create table test2(x)")
+        con = get_cached_connection()
+        cur = con.cursor()
+        with self.assertRaises(monetdbe.OperationalError):
+            cur.executescript("create table test(x); asdf; create table test2(x)")
 
     def test_ScriptErrorNormal(self):
-            con = get_cached_connection()
-            cur = con.cursor()
-            with self.assertRaises(monetdbe.OperationalError):
-                cur.executescript("create table test(sadfsadfdsa); select foo from hurz;")
+        con = get_cached_connection()
+        cur = con.cursor()
+        with self.assertRaises(monetdbe.OperationalError):
+            cur.executescript("create table test(sadfsadfdsa); select foo from hurz;")
 
     def test_CursorExecutescriptAsBytes(self):
-            con = get_cached_connection()
-            cur = con.cursor()
-            with self.assertRaises(ValueError) as cm:
-                cur.executescript(b"create table test(foo); insert into test(foo) values (5);")
-            self.assertEqual(str(cm.exception), 'script argument must be unicode.')
+        con = get_cached_connection()
+        cur = con.cursor()
+        with self.assertRaises(ValueError) as cm:
+            cur.executescript(b"create table test(foo); insert into test(foo) values (5);")
+        self.assertEqual(str(cm.exception), 'script argument must be unicode.')
 
     def test_ConnectionExecute(self):
-            con = get_cached_connection()
-            result = con.execute("select 5").fetchone()[0]
-            self.assertEqual(result, 5, "Basic test of Connection.execute")
+        con = get_cached_connection()
+        result = con.execute("select 5").fetchone()[0]
+        self.assertEqual(result, 5, "Basic test of Connection.execute")
 
     def test_ConnectionExecutemany(self):
-            con = get_cached_connection()
-            # NOTE: (gijs) added type int, required for MonetDB
-            con.execute("create table test(foo int)")
-            con.executemany("insert into test(foo) values (?)", [(3,), (4,)])
-            result = con.execute("select foo from test order by foo").fetchall()
-            self.assertEqual(result[0][0], 3, "Basic test of Connection.executemany")
-            self.assertEqual(result[1][0], 4, "Basic test of Connection.executemany")
+        con = get_cached_connection()
+        # NOTE: (gijs) added type int, required for MonetDB
+        con.execute("create table test(foo int)")
+        con.executemany("insert into test(foo) values (?)", [(3,), (4,)])
+        result = con.execute("select foo from test order by foo").fetchall()
+        self.assertEqual(result[0][0], 3, "Basic test of Connection.executemany")
+        self.assertEqual(result[1][0], 4, "Basic test of Connection.executemany")
 
     def test_ConnectionExecutescript(self):
-            con = get_cached_connection()
-            # NOTE: (gijs) added type int, required for MonetDB
-            con.executescript("create table test(foo int); insert into test(foo) values (5);")
-            result = con.execute("select foo from test").fetchone()[0]
-            self.assertEqual(result, 5, "Basic test of Connection.executescript")
+        con = get_cached_connection()
+        # NOTE: (gijs) added type int, required for MonetDB
+        con.executescript("create table test(foo int); insert into test(foo) values (5);")
+        result = con.execute("select foo from test").fetchone()[0]
+        self.assertEqual(result, 5, "Basic test of Connection.executescript")
 
 
 class ClosedConTests(unittest.TestCase):

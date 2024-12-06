@@ -4,6 +4,7 @@ import monetdbe as monetdbe
 
 from tests.util import get_cached_connection, flush_cached_connection
 
+
 class TransactionTests(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):

@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
-import argparse, os, runpy
+import argparse
+import os
+import runpy
 
 argparser = argparse.ArgumentParser()
 argparser.add_argument('version', nargs='?')
