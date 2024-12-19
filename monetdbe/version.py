@@ -15,7 +15,7 @@
 
 version_tuple = (51, 5, 0)
 
-version_suffix = 'a0'    # only empty on proper releases
+version_suffix = 'a1'    # only empty on proper releases
 
 __version__ = '.'.join(str(i) for i in version_tuple) + version_suffix
 
