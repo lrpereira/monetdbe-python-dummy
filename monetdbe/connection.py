@@ -73,13 +73,13 @@ class Connection:
         check_if_we_can_import_lowlevel()
 
         if uri or username or password or logging:
-            raise NotImplemented
+            raise NotImplementedError()
 
         if not check_same_thread:
-            raise NotImplemented
+            raise NotImplementedError()
 
         if detect_types != 0:
-            raise NotImplemented
+            raise NotImplementedError()
 
         if not database:
             database = None
