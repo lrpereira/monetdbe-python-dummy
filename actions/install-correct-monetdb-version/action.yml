@@ -35,9 +35,10 @@ runs:
     shell: bash
 
   # Install that
-  - uses: MonetDB/install-monetdb@v0.6
+  - uses: MonetDB/install-monetdb@v0.8
     id: install
     with:
       version: "${{ steps.decide.outputs.monetdb-version }}"
+      start: "false"
 
 

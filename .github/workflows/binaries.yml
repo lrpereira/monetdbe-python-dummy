@@ -116,6 +116,7 @@ jobs:
         if: (!steps.cache.outputs.cache-hit && needs.preflight.outputs.run-tests)
         run: |
           set -x
+          rm "${{ steps.installmonet.outputs.libdir}}/"*monetdbe.*
           mkdir testtesttest
           cd testtesttest
           python${{ matrix.python }} -m venv venv
@@ -207,6 +208,7 @@ jobs:
           set -x
           mkdir testtesttest
           cd testtesttest
+          rm "${{ steps.installmonet.outputs.libdir}}/"*monetdbe.*
           python${{ matrix.python }} -m venv venv
           WHEEL="$(echo ../wheels/*.whl)"
           ./venv/bin/pip install "${WHEEL}[test]"
@@ -254,7 +256,7 @@ jobs:
         id: cache
         with:
           path: wheels
-          key: cache-${{needs.preflight.outputs.magic}}x001-windows2019-${{ matrix.python }}-${{ steps.pickcachehash.outputs.sdist-hash }}-${{ hashFiles('scripts/do-everything.py')}}
+          key: cache-${{needs.preflight.outputs.magic}}x002-windows2019-${{ matrix.python }}-${{ steps.pickcachehash.outputs.sdist-hash }}-${{ hashFiles('scripts/do-everything.py')}}
 
       - uses: actions/setup-python@v5
         if: (!steps.cache.outputs.cache-hit)
@@ -285,6 +287,7 @@ jobs:
           set -x
           mkdir testtesttest
           cd testtesttest
+          rm "${{ steps.installmonet.outputs.bindir}}"/bin/monetdbe.dll
           python -m venv venv
           WHEEL="$(echo ../wheels/*.whl)"
           ./venv/Scripts/pip install "${WHEEL}[test]"
